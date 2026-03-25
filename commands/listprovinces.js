@@ -2,71 +2,73 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
+const rolesInOrder = [
+  'CMI | เชียงใหม่', 'CRI | เชียงราย', 'LPN | ลำพูน',
+  'NMA | นครราชสีมา', 'KKN | ขอนแก่น', 'UDN | อุดรธานี',
+  'BKK | กรุงเทพมหานคร', 'AYA | พระนครศรีอยุธยา', 'NBI | นนทบุรี',
+  'PKT | ภูเก็ต', 'SKA | สงขลา', 'SNI | สุราษฎร์ธานี'
+];
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('listprovinces')
-    .setDescription('แสดงรายชื่อประชาชนและจังหวัดทั้งหมดในเซิร์ฟเวอร์'),
+    .setDescription('สรุปรายชื่อประชาชนทั้งหมดจำแนกตามจังหวัด (เรียลไทม์)'),
 
   async execute(interaction) {
-    const dbPath = path.join(__dirname, '..', 'data', 'uid_roles.json');
-    
-    if (!fs.existsSync(dbPath)) {
-      return interaction.reply({ content: '❌ ยังไม่มีข้อมูลการแจกจังหวัดในระบบเลยครับ', ephemeral: true });
-    }
+    await interaction.deferReply({ ephemeral: false });
 
     try {
-      const data = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-      const uids = Object.keys(data);
-
-      if (uids.length === 0) {
-        return interaction.reply({ content: '✅ ยังไม่มีใครได้รับจังหวัดในระบบตอนนี้ครับ', ephemeral: true });
-      }
-
-      await interaction.deferReply({ ephemeral: false });
-
-      // 1. รวบรวมข้อมูลสมาชิกจาก Database
+      // ดึงข้อมูลสมาชิกทั้งหมดแบบ Real-time
+      const members = await interaction.guild.members.fetch();
       const provinceGroups = {};
       let totalCount = 0;
 
-      for (const uid of uids) {
-        const province = data[uid];
-        if (!provinceGroups[province]) provinceGroups[province] = [];
+      // เริ่มสแกนทุกคนในเซิร์ฟเวอร์
+      members.forEach(member => {
+        if (member.user.bot) return;
+
+        // หายศจังหวัดที่คนคนนั้นมี
+        const provinceRole = member.roles.cache.find(r => rolesInOrder.includes(r.name));
         
-        // ใช้ Tag (@User) แทนชื่อพิมพ์ เพื่อให้คลิกดูโปรไฟล์ได้ง่าย และไม่แจ้งเตือน (เพราะอยู่ใน Embed)
-        provinceGroups[province].push(`<@${uid}>`);
-        totalCount++;
+        if (provinceRole) {
+          if (!provinceGroups[provinceRole.name]) provinceGroups[provinceRole.name] = [];
+          provinceGroups[provinceRole.name].push(member.id);
+          totalCount++;
+        }
+      });
+
+      if (totalCount === 0) {
+        return interaction.editReply({ content: '❌ ยังไม่มีสมาชิกคนไหนกดยศจังหวัดเลยครับ' });
       }
 
-      // 2. เรียงลำดับจังหวัดและสร้าง Embed
-      const sortedProvinces = Object.keys(provinceGroups).sort();
       const embed = new EmbedBuilder()
         .setColor('#2F3136')
-        .setTitle('🏘️ รายชื่อประชาชนจำแนกตามจังหวัด')
-        .setDescription(`สรุปรายชื่อผู้ที่ได้รับจังหวัดแล้วทั้งหมด **${totalCount}** คน (เรียงตามภูมิภาค)`)
+        .setTitle('🏘️ ทะเบียนราษฎร์ - รายชื่อประชาชนจำแนกตามจังหวัด')
+        .setDescription(`ตรวจพบประชาชนที่ลงทะเบียนแล้วทั้งหมด **${totalCount}** คน`)
         .setTimestamp();
 
-      for (const province of sortedProvinces) {
-        const members = provinceGroups[province];
-        const memberListText = members.join(', ');
-        
-        // ตัดข้อความถ้ามันยาวเกินไปสำหรับ field value (Discord จำกัด 1024 ตัวอักษร)
-        const displayText = memberListText.length > 1000 ? memberListText.substring(0, 1000) + '...' : memberListText;
-        
-        embed.addFields({ 
-          name: `📌 ${province} [ ${members.length} คน ]`, 
-          value: displayText || 'ไม่มีสมาชิก' 
-        });
+      // เรียงลำดับจังหวัดตามที่กำหนดไว้ใน Array
+      for (const roleName of rolesInOrder) {
+        const uids = provinceGroups[roleName];
+        if (uids && uids.length > 0) {
+          // จัดรูปแบบ: หนึ่งคนต่อหนึ่งบรรทัด พร้อมจุด Bullet
+          const memberListText = uids.map(id => `• <@${id}>`).join('\n');
+          
+          // ตรวจสอบความยาวตัวอักษรของ Discord Field (จำกัด 1024)
+          const displayText = memberListText.length > 1000 ? memberListText.substring(0, 1000) + '\n...และคนอื่นๆ' : memberListText;
+
+          embed.addFields({ 
+            name: `📍 ${roleName} [ ${uids.length} คน ]`, 
+            value: displayText || 'ไม่มีข้อมูล' 
+          });
+        }
       }
 
       await interaction.editReply({ embeds: [embed] });
 
     } catch (err) {
       console.error(err);
-      if (interaction.deferred) {
-        await interaction.editReply({ content: '❌ เกิดข้อผิดพลาดในการโหลดข้อมูลครับ' });
-      } else {
-        await interaction.reply({ content: '❌ เกิดข้อผิดพลาดในการโหลดข้อมูลครับ', ephemeral: true });
-      }
+      await interaction.editReply({ content: '❌ เกิดข้อผิดพลาดในการดึงข้อมูลจาก Discord Server' });
     }
   }
 };
