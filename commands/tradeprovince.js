@@ -81,13 +81,22 @@ module.exports = {
       const collector = dmMessage.createMessageComponentCollector({ filter, time: 60000 });
 
       collector.on('collect', async i => {
+        // รับทราบการกดปุ่มทันทีเพื่อป้องกัน "การตอบโต้ล้มเหลว"
+        await i.deferUpdate();
+
         if (i.customId === 'accept_trade') {
-          await i.update({ content: '⏳ กำลังดำเนินการสลับจังหวัด...', embeds: [], components: [] });
+          // ส่งข้อความแจ้งว่ากำลังทำรายการ
+          await i.editReply({ content: '⏳ กำลังดำเนินการสลับจังหวัดให้คุณในเซิร์ฟเวอร์...', embeds: [], components: [] });
 
           try {
             const guild = interaction.guild;
-            const guildMember = await guild.members.fetch(user.id);
-            const targetMember = await guild.members.fetch(target.id);
+            if (!guild) throw new Error('ไม่พบข้อมูลเซิร์ฟเวอร์ (Guild not found)');
+
+            // มั่นใจว่าได้ข้อมูลสมาชิกที่อัปเดตล่าสุด
+            const [guildMember, targetMember] = await Promise.all([
+              guild.members.fetch(user.id).catch(() => user),
+              guild.members.fetch(target.id).catch(() => target)
+            ]);
 
             // สลับยศใน Discord
             await guildMember.roles.remove(userProvRole);
@@ -112,13 +121,13 @@ module.exports = {
 
             // แจ้ง Target (ใน DM)
             await i.editReply({
-              content: `✅ **แลกเปลี่ยนสำเร็จ!** คุณเป็นคนจังหวัด **${userProvRole.name}** แล้ว`
+              content: `✅ **แลกเปลี่ยนสำเร็จ!** คุณเป็นคนจังหวัด **${userProvRole.name}** แล้วในเซิร์ฟเวอร์ **${guild.name}**`
             });
 
             // แจ้ง Proposer (ทาง DM)
             await user.send(`✅ **คุณ <@${target.id}> ได้ตกลงในการเปลี่ยนจังหวัดแล้ว!**\nขณะนี้คุณเป็นคนจังหวัด **${targetProvRole.name}** เรียบร้อยแล้ว!`).catch(() => {});
 
-            // ส่ง Log ไปห้อง Log
+            // ส่ง Log
             const { sendEconomyLog } = require('../utils/logger');
             await sendEconomyLog(
               interaction.client,
@@ -129,11 +138,11 @@ module.exports = {
             );
 
           } catch (err) {
-            console.error(err);
-            await i.editReply({ content: '❌ เกิดข้อผิดพลาดในการสลับยศ บอทอาจไม่มีสิทธิ์กดยศให้คุณ' });
+            console.error('❌ Trade Error:', err);
+            await i.editReply({ content: `❌ เกิดข้อผิดพลาด: ${err.message}\n(บอทอาจมียศต่ำกว่ายศจังหวัด หรือคุณออกจากเซิร์ฟเวอร์ไปแล้ว)` });
           }
         } else {
-          await i.update({ content: '❌ คุณปฏิเสธคำขอจากเพื่อนแล้ว', embeds: [], components: [] });
+          await i.editReply({ content: '❌ คุณปฏิเสธคำขอแลกเปลี่ยนนี้แล้ว', embeds: [], components: [] });
           await user.send(`❌ **คุณ <@${target.id}> ปฏิเสธการแลกจังหวัดกับคุณ**`).catch(() => {});
         }
         collector.stop();
