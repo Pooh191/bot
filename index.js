@@ -198,13 +198,21 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 // guildMemberUpdate: มอบยศ CIV ตามลำดับ
 client.on('guildMemberUpdate', async (oldM, newM) => {
   const civRole = newM.guild.roles.cache.find(r => r.name === CIVILIAN_ROLE_NAME);
-  if (!civRole) return console.error('❌ CIV role missing');
+  if (!civRole) {
+    // console.error(`❌ ไม่พบยศหลักที่ชื่อ "${CIVILIAN_ROLE_NAME}" ในเซิร์ฟเวอร์นี้`);
+    return;
+  }
+
   const had = oldM.roles.cache.has(civRole.id);
   const has = newM.roles.cache.has(civRole.id);
+
+  // ตรวจสอบว่าคือกิจกรรม "เพิ่งได้รับยศหลัก" หรือไม่
   if (!had && has) {
+    console.log(`👤 ตรวจพบ ${newM.user.tag} ได้รับยศหลัก "${CIVILIAN_ROLE_NAME}" กำลังสุ่มจังหวัด...`);
+    
     let roleName = uidRoles[newM.id];
     if (!roleName) {
-      // นับจำนวนประชากรปัจจุบันว่าจังหวัดไหนมีคนเท่าไหร่บ้าง (เพื่อให้กระจายเท่าๆ กัน)
+      console.log(`🎲 สมาชิกใหม่ (ยังไม่เคยมีจังหวัด) กำลังสุ่มจาก ${rolesInOrder.length} จังหวัด...`);
       const counts = {};
       for (const prov of rolesInOrder) counts[prov] = 0;
       for (const uid in uidRoles) {
@@ -213,33 +221,40 @@ client.on('guildMemberUpdate', async (oldM, newM) => {
         }
       }
 
-      // หาตัวเลขประชากรของจังหวัดที่คนน้อยที่สุด
       const minCount = Math.min(...Object.values(counts));
-
-      // ดึงรายชื่อจังหวัดทั้งหมดที่มีคนน้อยที่สุดออกมา
       const candidates = rolesInOrder.filter(prov => counts[prov] === minCount);
-
-      // สุ่มแจกจังหวัด 1 ในกลุ่มที่คนน้อยที่สุด (แจกแบบสุ่ม แต่เท่าเทียม)
       const randomIdx = Math.floor(Math.random() * candidates.length);
       roleName = candidates[randomIdx];
 
-      // บันทึกลงฐานข้อมูล
       uidRoles[newM.id] = roleName;
       fs.writeFileSync(UID_ROLE_FILE, JSON.stringify(uidRoles, null, 2), 'utf8');
-
+      console.log(`📍 สุ่มได้จังหวัด: "${roleName}" (ประชากรเดิม: ${minCount})`);
+      
       // อัปเดตตัวนับไว้เฉยๆ เผื่อระบบเก่ามีเรียกใช้ที่ไหน
       saveCounter(getCounter() + 1);
+    } else {
+      console.log(`🏠 สมาชิกเดิม เคยมีจังหวัดเป็น "${roleName}" อยู่แล้ว`);
     }
+
     const r = newM.guild.roles.cache.find(x => x.name === roleName);
     if (r) {
-      await newM.roles.add(r);
-      const embed = new EmbedBuilder()
-        .setColor(0x00AE86)
-        .setTitle(`${newM.user.username} ได้รับยศ`)
-        .setDescription(`<@${newM.id}> ได้รับยศ **${roleName}**`)
-        .setTimestamp();
-      const nc = newM.guild.channels.cache.get(process.env.NOTIFY_CHANNEL_ID);
-      if (nc?.isTextBased()) await nc.send({ embeds: [embed] });
+      try {
+        await newM.roles.add(r);
+        console.log(`✅ มอบยศ "${roleName}" ให้ ${newM.user.tag} เรียบร้อย!`);
+        
+        const embed = new EmbedBuilder()
+          .setColor(0x00AE86)
+          .setTitle(`${newM.user.username} ได้รับยศ`)
+          .setDescription(`<@${newM.id}> ได้รับยศ **${roleName}**`)
+          .setTimestamp();
+        const nc = newM.guild.channels.cache.get(process.env.NOTIFY_CHANNEL_ID);
+        if (nc?.isTextBased()) await nc.send({ embeds: [embed] });
+      } catch (err) {
+        console.error(`❌ บอทไม่สามารถมอบยศ "${roleName}" ได้:`, err.message);
+        console.error(`👉 ตรวจสอบว่าบอทมีสิทธิ์ "Manage Roles" และยศของบอทอยู่ *สูงกว่า* ยศนั้นหรือไม่`);
+      }
+    } else {
+      console.error(`❌ ไม่พบยศที่ชื่อ "${roleName}" ในเซิร์ฟเวอร์นี้ (กรุณาเช็คชื่อยศว่าตรงกับในโค้ดหรือไม่)`);
     }
   }
 });
