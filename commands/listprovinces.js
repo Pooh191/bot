@@ -24,7 +24,7 @@ module.exports = {
 
       await interaction.deferReply({ ephemeral: false });
 
-      // รวบรวมข้อมูลสมาชิก
+      // 1. รวบรวมข้อมูลสมาชิกจาก Database
       const provinceGroups = {};
       let totalCount = 0;
 
@@ -32,22 +32,17 @@ module.exports = {
         const province = data[uid];
         if (!provinceGroups[province]) provinceGroups[province] = [];
         
-        try {
-          const member = await interaction.guild.members.fetch(uid).catch(() => null);
-          const name = member ? member.displayName : `(Unknown User: ${uid})`;
-          provinceGroups[province].push(name);
-          totalCount++;
-        } catch (e) {
-          provinceGroups[province].push(`(UID: ${uid})`);
-          totalCount++;
-        }
+        // ใช้ Tag (@User) แทนชื่อพิมพ์ เพื่อให้คลิกดูโปรไฟล์ได้ง่าย และไม่แจ้งเตือน (เพราะอยู่ใน Embed)
+        provinceGroups[province].push(`<@${uid}>`);
+        totalCount++;
       }
 
+      // 2. เรียงลำดับจังหวัดและสร้าง Embed
       const sortedProvinces = Object.keys(provinceGroups).sort();
       const embed = new EmbedBuilder()
-        .setColor('Blue')
-        .setTitle('🏘️ รายชื่อประชาชนและจังหวัด (Province List)')
-        .setDescription(`สรุปรายชื่อผู้ที่ได้รับจังหวัดแล้วทั้งหมด **${totalCount}** คน`)
+        .setColor('#2F3136')
+        .setTitle('🏘️ รายชื่อประชาชนจำแนกตามจังหวัด')
+        .setDescription(`สรุปรายชื่อผู้ที่ได้รับจังหวัดแล้วทั้งหมด **${totalCount}** คน (เรียงตามภูมิภาค)`)
         .setTimestamp();
 
       for (const province of sortedProvinces) {
@@ -58,7 +53,7 @@ module.exports = {
         const displayText = memberListText.length > 1000 ? memberListText.substring(0, 1000) + '...' : memberListText;
         
         embed.addFields({ 
-          name: `📍 ${province} (${members.length} คน)`, 
+          name: `📌 ${province} [ ${members.length} คน ]`, 
           value: displayText || 'ไม่มีสมาชิก' 
         });
       }
