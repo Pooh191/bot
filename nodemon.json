@@ -1,0 +1,9 @@
+{
+  "ignore": [
+    "data/*",
+    "config.json",
+    "*.test.js",
+    ".git"
+  ],
+  "ext": "js,json,env"
+}

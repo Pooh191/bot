@@ -1,0 +1,25 @@
+{
+  "name": "arlington-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.0"
+  },
+  "dependencies": {
+    "@discordjs/rest": "^2.5.0",
+    "@napi-rs/canvas": "^0.1.97",
+    "cron": "^4.3.0",
+    "discord-api-types": "^0.38.5",
+    "discord.js": "^14.19.3",
+    "dotenv": "^16.5.0",
+    "moment-timezone": "^0.5.48",
+    "mongoose": "^8.14.3",
+    "node-cron": "^3.0.0",
+    "partials": "^0.1.0"
+  }
+}

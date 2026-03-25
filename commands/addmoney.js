@@ -1,0 +1,46 @@
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { getUser, saveUsers } = require('../utils/economyUtils');
+const { sendEconomyLog } = require('../utils/logger');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('addmoney')
+    .setDescription('เสกเงินให้ผู้ใช้ (Admin เท่านั้น)')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addUserOption(opt => 
+      opt.setName('target')
+         .setDescription('เลือกผู้ใช้ที่จะได้รับเงิน')
+         .setRequired(true))
+    .addIntegerOption(opt => 
+      opt.setName('amount')
+         .setDescription('จำนวนเงิน (บาท/THB) ที่จะเพิ่ม')
+         .setRequired(true)),
+  async execute(interaction) {
+    const target = interaction.options.getUser('target');
+    const amount = interaction.options.getInteger('amount');
+
+    const { users, user } = getUser(target.id);
+    user.balance = (user.balance || 0) + amount;
+    saveUsers(users);
+
+    const embed = new EmbedBuilder()
+      .setColor('Green')
+      .setTitle('🪄 เสกเงินสำเร็จ')
+      .addFields(
+        { name: 'ผู้ใช้', value: target.username, inline: true },
+        { name: 'เพิ่มเงิน', value: `+${amount.toLocaleString()} บาท (THB)`, inline: true },
+        { name: 'ยอดเงินปัจจุบัน', value: `${user.balance.toLocaleString()} บาท (THB)`, inline: true }
+      )
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed] });
+
+    // แจ้งเตือนลง Economy Log
+    await sendEconomyLog(
+      interaction.client, 
+      'Admin เสกเงิน (Add Money)', 
+      `**แอดมิน:** <@${interaction.user.id}>\n**เป้าหมาย:** <@${target.id}>\n**จำนวน:** +${amount.toLocaleString()} บาท\n**ยอดเงินสดใหม่:** ${user.balance.toLocaleString()} บาท`, 
+      'Green'
+    );
+  }
+};
