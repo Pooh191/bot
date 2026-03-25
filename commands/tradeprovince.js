@@ -37,6 +37,9 @@ module.exports = {
       return interaction.reply({ content: `❌ คุณทั้งคู่เป็นคนจังหวัด **${userProvRole.name}** เหมือนกันอยู่แล้ว`, ephemeral: true });
     }
 
+    // แจ้งบอทว่ากำลังประมวลผล (ป้องกัน Interaction Failed)
+    await interaction.deferReply({ ephemeral: true });
+
     const embed = new EmbedBuilder()
       .setColor('Blue')
       .setTitle('🤝 คำขอแลกเปลี่ยนจังหวัด (Province Trade Request)')
@@ -56,24 +59,22 @@ module.exports = {
       );
 
     try {
-      // ส่งไปที่ DM ของเป้าหมาย
+      // ส่งไปที่ DM ของเป้าหมาย (คนถูกแลก)
       const dmMessage = await target.send({
-        content: `👋 สวัสดี <@${target.id}>! มีคำขอแลกเปลี่ยนจังหวัดใหม่จาก <@${user.id}>!`,
+        content: `👋 สวัสดี <@${target.id}>! มีคำขอแลกเปลี่ยนจังหวัดจาก <@${user.id}>!`,
         embeds: [embed],
         components: [row]
-      }).catch(async (err) => {
-        return await interaction.reply({ 
-          content: `❌ **ไม่สามารถส่งคำขอไปหา <@${target.id}> ได้** (เนื่องจากเขาปิดรับ DM จากคนแปลกหน้าหรือบอท)`, 
-          ephemeral: true 
+      }).catch(() => null);
+
+      if (!dmMessage) {
+        return interaction.editReply({ 
+          content: `❌ **ไม่สามารถส่งขอทาง DM ได้** คุณ <@${target.id}> อาจจะปิดรับ DM ครับ`
         });
-      });
+      }
 
-      if (!dmMessage) return;
-
-      // แจ้งผู้ส่งว่าส่งสำเร็จ
-      await interaction.reply({ 
-        content: `✅ **ส่งคำขอแลกจังหวัดไปที่ DM ของ <@${target.id}> เรียบร้อยแล้ว!** กรุณารอเขาตอบกลับครับ`, 
-        ephemeral: true 
+      // แจ้งผู้ส่งในช่องพิมพ์คำสั่ง (ผู้ส่งเห็นคนเดียว)
+      await interaction.editReply({ 
+        content: `✅ **ส่งคำขอแลกจังหวัดไปที่แชทส่วนตัว (DM) ของ <@${target.id}> เรียบร้อยแล้ว!**`
       });
 
       const filter = i => i.user.id === target.id;
@@ -81,8 +82,9 @@ module.exports = {
 
       collector.on('collect', async i => {
         if (i.customId === 'accept_trade') {
+          await i.update({ content: '⏳ กำลังดำเนินการสลับจังหวัด...', embeds: [], components: [] });
+
           try {
-            // ดึงข้อมูลล่าสุด
             const guild = interaction.guild;
             const guildMember = await guild.members.fetch(user.id);
             const targetMember = await guild.members.fetch(target.id);
@@ -106,40 +108,33 @@ module.exports = {
             
             uidRoles[user.id] = targetProvRole.name;
             uidRoles[target.id] = userProvRole.name;
-            
             fs.writeFileSync(UID_ROLE_FILE, JSON.stringify(uidRoles, null, 2), 'utf8');
 
-            await i.update({
-              content: '✅ **การแลกเปลี่ยนสำเร็จเรียบร้อย!** ยศของคุณถูกเปลี่ยนแล้วในเซิร์ฟเวอร์',
-              embeds: [
-                new EmbedBuilder()
-                  .setColor('Green')
-                  .setTitle('✅ แลกเปลี่ยนสำเร็จ')
-                  .setDescription(`คุณและ <@${user.id}> ได้แลกจังหวัดกันแล้ว!\n📍 ยศใหม่ของคุณ: **${userProvRole.name}**`)
-              ],
-              components: []
+            // แจ้ง Target (ใน DM)
+            await i.editReply({
+              content: `✅ **แลกเปลี่ยนสำเร็จ!** คุณเป็นคนจังหวัด **${userProvRole.name}** แล้ว`
             });
 
-            // แจ้งเตือนผู้ส่งทาง DM ด้วย
-            await user.send(`✅ <@${target.id}> ตอบรับคำขอของคุณแล้ว! จังหวัดของคุณเปลี่ยนเป็น **${targetProvRole.name}** เรียบร้อยแล้ว!`).catch(() => {});
+            // แจ้ง Proposer (ทาง DM)
+            await user.send(`✅ **คุณ <@${target.id}> ได้ตกลงในการเปลี่ยนจังหวัดแล้ว!**\nขณะนี้คุณเป็นคนจังหวัด **${targetProvRole.name}** เรียบร้อยแล้ว!`).catch(() => {});
 
-            // ส่ง Log ไปที่ช่อง Log หลัก
+            // ส่ง Log ไปห้อง Log
             const { sendEconomyLog } = require('../utils/logger');
             await sendEconomyLog(
               interaction.client,
               '🤝 แลกเปลี่ยนจังหวัดสำเร็จ (DM Trade Success)',
-              `**ผู้ใช้ 1:** <@${user.id}> (**${userProvRole.name}** -> **${targetProvRole.name}**)\n**ผู้ใช้ 2:** <@${target.id}> (**${targetProvRole.name}** -> **${userProvRole.name}**)`,
+              `**${user.user.tag}** (${userProvRole.name}) 🔄 **${target.user.tag}** (${targetProvRole.name})`,
               'Green',
               false
             );
 
           } catch (err) {
             console.error(err);
-            await i.update({ content: '❌ เกิดข้อผิดพลาดในการสลับยศ กรุณาแจ้งแอดมิน (บอทอาจไม่มีสิทธิ์กดยศของคุณ)', embeds: [], components: [] });
+            await i.editReply({ content: '❌ เกิดข้อผิดพลาดในการสลับยศ บอทอาจไม่มีสิทธิ์กดยศให้คุณ' });
           }
         } else {
-          await i.update({ content: '❌ คุณปฏิเสธคำขอแลกเปลี่ยนแล้ว', embeds: [], components: [] });
-          await user.send(`❌ <@${target.id}> ปฏิเสธการแลกจังหวัดของคุณ`).catch(() => {});
+          await i.update({ content: '❌ คุณปฏิเสธคำขอจากเพื่อนแล้ว', embeds: [], components: [] });
+          await user.send(`❌ **คุณ <@${target.id}> ปฏิเสธการแลกจังหวัดกับคุณ**`).catch(() => {});
         }
         collector.stop();
       });
@@ -152,11 +147,10 @@ module.exports = {
 
     } catch (e) {
       console.error(e);
-      if (!interaction.replied) {
-        await interaction.reply({ 
-          content: `❌ เกิดข้อผิดพลาดบางประการในการส่งคำขอ`, 
-          ephemeral: true 
-        });
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: '❌ เกิดข้อผิดพลาดบางประการ', ephemeral: true });
+      } else {
+        await interaction.editReply({ content: '❌ เกิดข้อผิดพลาดบางประการ' });
       }
     }
   }
