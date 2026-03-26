@@ -1,45 +1,42 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } = require('discord.js');
 const { loadUsers, saveUsers, getUser } = require('../utils/economyUtils');
 const { sendEconomyLog } = require('../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('reset-bank')
-    .setDescription('รีเซ็ตเงินในธนาคารของผู้ใช้ (Admin เท่านั้น)')
+    .setDescription('รีเซ็ตเงินในธนาคาร (Admin เท่านั้น)')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addUserOption(opt => opt.setName('target').setDescription('เลือกผู้ใช้ที่ต้องการรีเซ็ต'))
-    .addBooleanOption(opt => opt.setName('all').setDescription('รีเซ็ตเงินในธนาคารของผู้ใช้ทุกคน (ต้องเลือกเป็น True)')),
+    .addSubcommand(sub =>
+      sub.setName('user')
+        .setDescription('รีเซ็ตเงินในธนาคารของรายบุคคล')
+        .addUserOption(opt => opt.setName('target').setDescription('เลือกผู้ใช้ที่ต้องการรีเซ็ต').setRequired(true)))
+    .addSubcommand(sub =>
+      sub.setName('all')
+        .setDescription('รีเซ็ตเงินในธนาคารของทุกคน')
+        .addBooleanOption(opt => opt.setName('confirm').setDescription('ยืนยันล้างข้อมูลเงินธนาคารทุกคน (ต้องเลือกเป็น True)').setRequired(true))),
 
   async execute(interaction) {
-    const target = interaction.options.getUser('target');
-    const all = interaction.options.getBoolean('all');
-
-    if (!target && !all) {
-      return interaction.reply({ content: '❌ กรุณาเลือกผู้ใช้ที่ต้องการรีเซ็ต หรือเลือก Option `all` เป็น True เพื่อรีเซ็ตทุกคน', ephemeral: true });
-    }
+    const subcommand = interaction.options.getSubcommand();
+    const users = loadUsers();
+    let logMessage = '';
 
     try {
-      const users = loadUsers();
-      let logMessage = '';
+      if (subcommand === 'all') {
+        const confirm = interaction.options.getBoolean('confirm');
+        if (!confirm) return interaction.reply({ content: '❌ กรุณาเลือก Confirm เป็น True เพื่อยืนยันการล้างข้อมูลทุกคน', flags: [MessageFlags.Ephemeral] });
 
-      if (all) {
-        // Reset All
         const userCount = Object.keys(users).length;
         for (const userId in users) {
-          users[userId].bank = 0;
+          if (users[userId]) users[userId].bank = 0;
         }
         saveUsers(users);
         logMessage = `รีเซ็ตเงินในธนาคารของผู้ใช้ทุกคน (${userCount} ราย)`;
       } else {
-        // Reset Individual
-        if (!users[target.id]) {
-          const { users: updatedUsers, user } = getUser(target.id);
-          user.bank = 0;
-          saveUsers(updatedUsers);
-        } else {
-          users[target.id].bank = 0;
-          saveUsers(users);
-        }
+        const target = interaction.options.getUser('target');
+        const { users: updatedUsers, user } = getUser(target.id);
+        user.bank = 0;
+        saveUsers(updatedUsers);
         logMessage = `รีเซ็ตเงินในธนาคารของ <@${target.id}>`;
       }
 
@@ -51,7 +48,6 @@ module.exports = {
 
       await interaction.reply({ embeds: [embed] });
 
-      // Log to Economy Log
       await sendEconomyLog(
         interaction.client,
         'Admin รีเซ็ตเงินในธนาคาร',
@@ -61,7 +57,11 @@ module.exports = {
 
     } catch (error) {
       console.error('Error resetting bank:', error);
-      await interaction.reply({ content: 'เกิดข้อผิดพลาดในการรีเซ็ตเงินในธนาคาร', ephemeral: true });
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({ content: 'เกิดข้อผิดพลาดในการรีเซ็ตเงินในธนาคาร', flags: [MessageFlags.Ephemeral] }).catch(() => {});
+      } else {
+        await interaction.reply({ content: 'เกิดข้อผิดพลาดในการรีเซ็ตเงินในธนาคาร', flags: [MessageFlags.Ephemeral] }).catch(() => {});
+      }
     }
   }
 };
