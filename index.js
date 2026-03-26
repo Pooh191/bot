@@ -3,7 +3,7 @@ const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, Chann
 const fs = require('fs');
 const path = require('path');
 const { setupDailyUpdate } = require('./scheduler/dailyUpdate');
-const { loadUsers, saveUsers, loadResources, saveResources, loadConfig, saveConfig } = require('./utils/economyUtils');
+const { loadUsers, saveUsers, loadResources, saveResources, loadConfig, saveConfig, addXP } = require('./utils/economyUtils');
 const { scheduleAll } = require('./scheduler/scheduler');
 
 // สร้างโฟลเดอร์ data ถ้ายังไม่มี
@@ -313,7 +313,6 @@ client.on('messageCreate', async (message) => {
   if (!message.guild || !message.author || message.author.bot) return;
 
   // Add XP
-  const { addXP } = require('./utils/economyUtils');
   const result = addXP(message.author.id, Math.floor(Math.random() * 5) + 1);
   if (result.leveledUp) {
     message.channel.send(`🎊 ยินดีด้วยคุณ <@${message.author.id}>! เลเวลของคุณเพิ่มขึ้นเป็น **Level ${result.level}** แล้ว!`);

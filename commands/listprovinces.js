@@ -15,9 +15,9 @@ module.exports = {
     .setDescription('สรุปรายชื่อประชาชนทั้งหมดจำแนกตามจังหวัด (เรียลไทม์)'),
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: false });
-
     try {
+      await interaction.deferReply({ ephemeral: false }).catch(() => {});
+
       // ดึงข้อมูลสมาชิกทั้งหมดแบบ Real-time
       const members = await interaction.guild.members.fetch();
       const provinceGroups = {};
@@ -38,7 +38,10 @@ module.exports = {
       });
 
       if (totalCount === 0) {
-        return interaction.editReply({ content: '❌ ยังไม่มีสมาชิกคนไหนกดยศจังหวัดเลยครับ' });
+        if (interaction.deferred || interaction.replied) {
+          return await interaction.editReply({ content: '❌ ยังไม่มีสมาชิกคนไหนกดยศจังหวัดเลยครับ' }).catch(() => {});
+        }
+        return;
       }
 
       const embed = new EmbedBuilder()
@@ -64,11 +67,15 @@ module.exports = {
         }
       }
 
-      await interaction.editReply({ embeds: [embed] });
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ embeds: [embed] }).catch(() => {});
+      }
 
     } catch (err) {
       console.error(err);
-      await interaction.editReply({ content: '❌ เกิดข้อผิดพลาดในการดึงข้อมูลจาก Discord Server' });
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ content: '❌ เกิดข้อผิดพลาดในการดึงข้อมูลจาก Discord Server' }).catch(() => {});
+      }
     }
   }
 };

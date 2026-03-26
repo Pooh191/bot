@@ -7,11 +7,15 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
-  PermissionFlagsBits
+  PermissionFlagsBits,
+  MessageFlags
 } = require('discord.js');
 const { loadConfig } = require('../utils/configManager');
 const fs = require('fs');
 const path = require('path');
+const { getUser, saveUsers, addXP } = require('../utils/economyUtils');
+const { sendEconomyLog } = require('../utils/logger');
+const moment = require('moment-timezone');
 
 module.exports = {
   name: 'interactionCreate',
@@ -55,7 +59,7 @@ module.exports = {
 
       // ✅ แบบฟอร์มสัญชาติ
       if (interaction.isModalSubmit() && interaction.customId === 'citizen_form') {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
         const fullName = interaction.fields.getTextInputValue('fullname');
         const discordUsername = interaction.fields.getTextInputValue('discord_username');
@@ -105,7 +109,7 @@ module.exports = {
 
       // ✅ จัดการปุ่มอนุมัติ/ปฏิเสธสัญชาติ
       if (interaction.isButton() && (interaction.customId.startsWith('approve_citizen_') || interaction.customId.startsWith('reject_citizen_'))) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
         
         const isApprove = interaction.customId.startsWith('approve_citizen_');
         // split from 'approve_citizen_userID'
@@ -134,7 +138,6 @@ module.exports = {
             } else {
             await member.roles.add(civRole).then(async () => {
                 // ✅ เก็บข้อมูลชื่อจริงและจังหวัดลงฐานข้อมูล + มอบทุน 5,000 บาท
-                const { getUser, saveUsers } = require('../utils/economyUtils');
                 const { users, user } = getUser(targetUserId);
                 
                 // ดึงชื่อและจังหวัดจาก Embed ที่แอดมินพิจารณา
@@ -146,7 +149,7 @@ module.exports = {
                 user.balance += 5000;
                 saveUsers(users);
 
-                const { sendEconomyLog } = require('../utils/logger');
+                const { sendEconomyLog } = require('../utils/logger'); // Keep internal if needed but better at top
                 await sendEconomyLog(
                   interaction.client, 
                   '🎁 สมาชิกระบบเศรษฐกิจใหม่ (New Citizen)', 
@@ -189,7 +192,6 @@ module.exports = {
         } else {
           await interaction.editReply({ content: '❌ คุณได้ทำการ **ปฏิเสธ** คำขอสัญชาตินี้เรียบร้อยแล้ว' });
 
-          const { sendEconomyLog } = require('../utils/logger');
           await sendEconomyLog(
             interaction.client, 
             '🛂 แอดมินจัดการสัญชาติ', 
@@ -244,17 +246,15 @@ module.exports = {
         const nameEng = interaction.fields.getTextInputValue('name_eng');
         const birthDate = interaction.fields.getTextInputValue('birth_date');
 
-        const { getUser, saveUsers } = require('../utils/economyUtils');
         const { users, user } = getUser(interaction.user.id);
 
         if (user.idCard) {
-            return interaction.reply({ content: '❌ คุณมีบัตรประชาชนอยู่แล้ว!', ephemeral: true });
+            return interaction.reply({ content: '❌ คุณมีบัตรประชาชนอยู่แล้ว!', flags: [MessageFlags.Ephemeral] });
         }
 
         // ใช้ UID Discord เป็นเลขประจำตัวประชาชน
         const idNumber = interaction.user.id;
 
-        const moment = require('moment-timezone');
         const now = moment().tz('Asia/Bangkok');
         const expiry = moment().tz('Asia/Bangkok').add(8, 'years');
 
@@ -275,7 +275,7 @@ module.exports = {
             .setColor('Green')
             .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
         return;
       }
 
@@ -284,7 +284,7 @@ module.exports = {
         const TICKET_CONFIG_FILE = path.join(__dirname, '..', 'data', 'ticket_config.json');
         
         if (!fs.existsSync(TICKET_CONFIG_FILE)) {
-          return interaction.reply({ content: '❌ แอดมินยังไม่ได้ตั้งค่าระบบ Ticket', ephemeral: true });
+          return interaction.reply({ content: '❌ แอดมินยังไม่ได้ตั้งค่าระบบ Ticket', flags: [MessageFlags.Ephemeral] });
         }
         
         const config = JSON.parse(fs.readFileSync(TICKET_CONFIG_FILE, 'utf8'));
@@ -296,7 +296,7 @@ module.exports = {
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName && c.parentId === categoryId);
         
         if (existingChannel) {
-          return interaction.reply({ content: `❌ คุณเปิดทิคเก็ตไว้แล้วที่ห้อง <#${existingChannel.id}>`, ephemeral: true });
+          return interaction.reply({ content: `❌ คุณเปิดทิคเก็ตไว้แล้วที่ห้อง <#${existingChannel.id}>`, flags: [MessageFlags.Ephemeral] });
         }
 
         // สร้างห้องทิคเก็ตใหม่
@@ -336,10 +336,10 @@ module.exports = {
 
           await newChannel.send({ content: `<@${interaction.user.id}> | <@&${adminRoleId}>`, embeds: [embed], components: [row] });
 
-          await interaction.reply({ content: `✅ สร้างห้องทิคเก็ตสำเร็จแล้ว! ไปที่ <#${newChannel.id}> ได้เลยครับ`, ephemeral: true });
+          await interaction.reply({ content: `✅ สร้างห้องทิคเก็ตสำเร็จแล้ว! ไปที่ <#${newChannel.id}> ได้เลยครับ`, flags: [MessageFlags.Ephemeral] });
         } catch (error) {
           console.error('Error creating ticket channel:', error);
-          await interaction.reply({ content: '❌ เกิดข้อผิดพลาดในการสร้างห้องทิคเก็ต (บอทอาจจะไม่มีสิทธิ์ Manage Channels)', ephemeral: true });
+          await interaction.reply({ content: '❌ เกิดข้อผิดพลาดในการสร้างห้องทิคเก็ต (บอทอาจจะไม่มีสิทธิ์ Manage Channels)', flags: [MessageFlags.Ephemeral] });
         }
         return;
       }
@@ -386,11 +386,14 @@ module.exports = {
           await cmd.execute(interaction, client);
 
           // Log Slash command usage for Admin
-          const { sendEconomyLog } = require('../utils/logger');
           sendEconomyLog(client, '⌨️ ใช้คำสั่ง Slash', `**ผู้ใช้:** <@${interaction.user.id}>\n**คำสั่ง:** /${interaction.commandName}`, 'Aqua', false);
         } catch (e) {
           console.error(e);
-          await interaction.reply({ content: '❌ เกิดข้อขัดข้อง', ephemeral: true });
+          if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ content: '❌ เกิดข้อขัดข้องในการรันคำสั่งนี้', flags: [MessageFlags.Ephemeral] }).catch(() => {});
+          } else {
+            await interaction.reply({ content: '❌ เกิดข้อขัดข้อง', flags: [MessageFlags.Ephemeral] }).catch(() => {});
+          }
         }
       }
 
@@ -402,8 +405,10 @@ module.exports = {
           await btn.execute(interaction, client);
         } catch (e) {
           console.error(e);
-          if (!interaction.replied) {
-            await interaction.reply({ content: '❌ การกดปุ่มล้มเหลว', ephemeral: true });
+          if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ content: '❌ การกดปุ่มล้มเหลว', flags: [MessageFlags.Ephemeral] }).catch(() => {});
+          } else {
+            await interaction.reply({ content: '❌ การกดปุ่มล้มเหลว', flags: [MessageFlags.Ephemeral] }).catch(() => {});
           }
         }
       }
@@ -425,10 +430,17 @@ module.exports = {
     } catch (error) {
       console.error('Interaction Error:', error);
       if (interaction.isRepliable()) {
-        await interaction.reply({
-          content: '❌ เกิดข้อผิดพลาดในการประมวลผล',
-          ephemeral: true
-        }).catch(e => console.error('Reply failed:', e));
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp({
+            content: '❌ เกิดข้อผิดพลาดในการประมวลผล',
+            flags: [MessageFlags.Ephemeral]
+          }).catch(e => {});
+        } else {
+          await interaction.reply({
+            content: '❌ เกิดข้อผิดพลาดในการประมวลผล',
+            flags: [MessageFlags.Ephemeral]
+          }).catch(e => {});
+        }
       }
     }
   }
