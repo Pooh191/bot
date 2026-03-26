@@ -1,10 +1,11 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { getConfig, saveConfig } = require('../utils/economyUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('setcrime')
     .setDescription('ตั้งค่าการทำงานแบบ crime')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addIntegerOption(option => 
       option.setName('min')
         .setDescription('จำนวนเงินขั้นต่ำที่ได้รับจากการทำงาน')

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,6 +8,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('setmoneyarlington')
     .setDescription('ตั้งค่าเงินเริ่มต้นเมื่อผู้ใช้ใหม่เข้าเซิร์ฟเวอร์')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addIntegerOption(opt =>
       opt.setName('amount')
          .setDescription('จำนวนเงินเริ่มต้น (DL Arlington)')

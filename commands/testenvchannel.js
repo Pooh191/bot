@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const configPath = path.join(__dirname, '../data/config.json');
@@ -6,7 +6,8 @@ const configPath = path.join(__dirname, '../data/config.json');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('testenvchannel')
-    .setDescription('ทดสอบการส่งข้อความไปยังช่องแจ้งเตือนที่ตั้งค่าไว้'),
+    .setDescription('ทดสอบการส่งข้อความไปยังช่องแจ้งเตือนที่ตั้งค่าไว้ (Admin เท่านั้น)')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
     try {

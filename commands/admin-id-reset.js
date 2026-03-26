@@ -1,20 +1,17 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { getUser, saveUsers } = require('../utils/economyUtils');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('admin-id-reset')
         .setDescription('🛠️ (Admin) รีเซ็ตข้อมูลบัตรประชาชนของสมาชิก')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addUserOption(option =>
             option.setName('user')
                 .setDescription('สมาชิกที่ต้องการรีเซ็ต')
                 .setRequired(true)),
 
     async execute(interaction) {
-        if (!interaction.member.permissions.has('Administrator')) {
-            return interaction.reply({ content: '⚠️ เฉพาะผู้ดูแลระบบเท่านั้นที่ใช้คำสั่งนี้ได้', ephemeral: true });
-        }
-
         const targetUser = interaction.options.getUser('user');
         const { users, user } = getUser(targetUser.id);
 
