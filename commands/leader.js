@@ -13,15 +13,46 @@ module.exports = {
         .setName('leader')
         .setDescription('แสดงอันดับเงินในเซิร์ฟเวอร์ (หน้าเรียกดูได้)'),
   async execute(interaction) {
-    const users = loadUsers();
+    await interaction.deferReply();
+    const { loadConfig, saveUsers } = require('../utils/economyUtils');
+    const cfg = loadConfig();
+    let users = loadUsers();
     
-    // กรองเอาเฉพาะคนที่มีตัวตนอยู่ในเซิร์ฟเวอร์ และไม่ใช่ 'undefined'
+    // ดึงสมาชิกทุกคนจากเซิร์ฟเวอร์เพื่อให้ข้อมูลอัปเดตที่สุด
+    const members = await interaction.guild.members.fetch();
+    let hasNewUsers = false;
+
+    // ตรวจสอบทุกคนในเซิร์ฟเวอร์ ถ้าใครยังไม่มีชื่อใน Database ให้เพิ่มทันที
+    members.forEach(member => {
+        if (!member.user.bot && !users[member.id]) {
+            users[member.id] = {
+                id: member.id,
+                balance: cfg.startingBalance || 0,
+                bank: 0,
+                xp: 0,
+                level: 1,
+                lastWork: 0,
+                lastSlut: 0,
+                lastCrime: 0,
+                job: 'none',
+                loanPrincipal: 0,
+                loanInterest: 0,
+                idCard: null
+            };
+            hasNewUsers = true;
+        }
+    });
+
+    if (hasNewUsers) {
+        saveUsers(users);
+    }
+
+    // กรองและเรียงอันดับ
     const sorted = Object.entries(users)
       .filter(([id, u]) => {
         if (id === 'undefined') return false;
-        if (!u || typeof u.balance !== 'number') return false;
-        // เช็คว่ายังอยู่ในเซิร์ฟเวอร์ไหม (ใช้ cache)
-        return interaction.guild.members.cache.has(id);
+        // แสดงเฉพาะคนที่ยังอยู่ในเซิร์ฟเวอร์นี้
+        return members.has(id);
       })
       .sort((a, b) => {
         const totalA = (a[1].balance || 0) + (a[1].bank || 0);
@@ -71,7 +102,7 @@ module.exports = {
                 .setDisabled(page === totalPages - 1)
         );
 
-        const message = await interaction.reply({ embeds: [generateEmbed(0)], components: [row(0)], fetchReply: true });
+        const message = await interaction.editReply({ embeds: [generateEmbed(0)], components: [row(0)], fetchReply: true });
 
         const collector = message.createMessageComponentCollector({
             filter: i => ['prev', 'next'].includes(i.customId) && i.user.id === interaction.user.id,
