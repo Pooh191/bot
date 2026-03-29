@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { getUser, saveUsers } = require('../utils/economyUtils');
 const { sendEconomyLog } = require('../utils/logger');
 
@@ -25,6 +25,21 @@ module.exports = {
     const bet = interaction.options.getInteger('bet');
     const { users: allUsers, user } = getUser(interaction.user.id);
 
+    const isAdmin = interaction.member.permissions.has(PermissionsBitField.Flags.Administrator);
+    const now = Date.now();
+    const lastCoinflip = user.lastCoinflip || 0;
+    const cooldown = 60 * 60 * 1000; // 1 ชั่วโมง
+
+    if (!isAdmin && now - lastCoinflip < cooldown) {
+      const timeLeft = cooldown - (now - lastCoinflip);
+      const minutes = Math.floor(timeLeft / (1000 * 60));
+      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+      return interaction.reply({ 
+        content: `⌛ คุณเล่นโยนเหรียญไปแล้ว! กรุณารออีก **${minutes} นาที ${seconds} วินาที** จึงจะเล่นใหม่ได้`, 
+        ephemeral: true 
+      });
+    }
+
     if (user.balance < bet) {
       return interaction.reply({ content: `❌ คุณมียอดเงินไม่พอเดิมพัน (ขาดอีก ${(bet - user.balance).toLocaleString()} บาท)`, ephemeral: true });
     }
@@ -49,6 +64,7 @@ module.exports = {
       embed.addFields({ name: 'ขาดทุน', value: `-${bet.toLocaleString()} บาท\nยอดรวม: ${user.balance.toLocaleString()} บาท` });
     }
 
+    user.lastCoinflip = now;
     saveUsers(allUsers);
     await interaction.reply({ embeds: [embed] });
 

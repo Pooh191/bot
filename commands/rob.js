@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { getUser, saveUsers } = require('../utils/economyUtils');
 const { sendEconomyLog } = require('../utils/logger');
 
@@ -25,14 +25,18 @@ module.exports = {
     const { users: allUsers, user: thief } = getUser(senderId);
     const { user: victim } = getUser(target.id);
 
+    const isAdmin = interaction.member.permissions.has(PermissionsBitField.Flags.Administrator);
+
     // Cooldown check
     const now = Date.now();
-    const cooldown = 3600000; // 1 hour
+    const cooldown = 2 * 60 * 60 * 1000; // 2 hours
     const lastRob = thief.lastRob || 0;
 
-    if (now - lastRob < cooldown) {
-      const remaining = Math.ceil((cooldown - (now - lastRob)) / 60000);
-      return interaction.reply({ content: `❌ คุณเพิ่งปล้นไปไม่นาน ตำรวจกำลังตามสืบอยู่! (รออีก ${remaining} นาที)` });
+    if (!isAdmin && now - lastRob < cooldown) {
+      const timeLeft = cooldown - (now - lastRob);
+      const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      return interaction.reply({ content: `❌ คุณเพิ่งปล้นไปไม่นาน ตำรวจกำลังตามสืบอยู่! (รออีก **${hours} ชั่วโมง ${minutes} นาที**)` });
     }
 
     if (victim.balance < 500) {

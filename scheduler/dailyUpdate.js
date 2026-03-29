@@ -45,6 +45,12 @@ function setupDailyUpdate(client) {
 
       for (const [id, u] of Object.entries(users)) {
         if (id === 'undefined') continue;
+        
+        // --- แจกรายได้รายวันอัตโนมัติ (แทนคำสั่ง /daily) ---
+        if (cfg.dailyIncome > 0) {
+          u.balance = (u.balance || 0) + cfg.dailyIncome;
+        }
+
         const cash = u.balance || 0;
         const bank = u.bank || 0;
         const debt = (u.loanPrincipal || 0) + (u.loanInterest || 0);
@@ -64,6 +70,8 @@ function setupDailyUpdate(client) {
       cfg.lastTotal = total;
 
       // save back
+      const { saveUsers } = require('../utils/economyUtils');
+      saveUsers(users);
       saveConfig(cfg);
       saveResources(resources);
 

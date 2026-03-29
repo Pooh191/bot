@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { getConfig, setConfig } = require('../utils/economyUtils');
+const { getConfig, saveConfig } = require('../utils/economyUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -11,7 +11,7 @@ module.exports = {
     const amt = interaction.options.getInteger('amount');
     const cfg = getConfig();
     cfg.dailyIncome = amt;
-    setConfig(cfg);
+    saveConfig(cfg);
     await interaction.reply(`✅ ตั้งค่ารายได้รายวัน: ${amt.toLocaleString()} บาท (THB)`);
   }
 };
