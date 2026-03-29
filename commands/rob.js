@@ -64,7 +64,7 @@ module.exports = {
       thief.balance = Math.max(0, thief.balance - fine);
 
       embed.setColor('Red');
-      embed.setDescription(`❌ **พลาดแล้ว!** ตำรวจเมืองอาร์ลิงตันจับตัวคุณไว้ได้ทันควัน ขณะกำลังล้วงกระเป๋า <@${target.id}>`);
+      embed.setDescription(`❌ **พลาดแล้ว!** ตำรวจไทยจับตัวคุณไว้ได้ทันควัน ขณะกำลังล้วงกระเป๋า <@${target.id}>`);
       embed.addFields({ name: 'ค่าปรับ (罰)', value: `-${fine.toLocaleString()} บาท (THB)`, inline: true });
       embed.setFooter({ text: 'คุณถูกตำรวจพยายามจับกุมตัว (เงินหาย)' });
     }

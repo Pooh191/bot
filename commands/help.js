@@ -17,7 +17,6 @@ module.exports = {
       { name: '📊 สถิติ & รางวัล', value: '`/profile` - ดูเลเวลและ XP\n`/checkmoney` - เช็คเงิน\n`/leader` - อันดับคนรวย\n`/tax` - เช็คยอดภาษี\n`/howto` - วิธีใช้บอทเงิน', inline: false },
       { name: '💰 เศรษฐกิจ & ธนาคาร', value: '`/work` - ทำงาน\n`/slut` - ทำงานสีเทา\n`/crime` - ปล้นระบบ\n`/dep` - ฝากเงิน\n`/drew` - ถอนเงิน\n`/pay` - โอนเงิน\n`/loan` - กู้เงินธนาคารแห่งประเทศไทย\n`/repay` - ชำระหนี้\n`/credit` - เช็ควงเงินกู้', inline: false },
       { name: '🎲 การพนัน & เสี่ยงโชค', value: '`/slots` - หมุนสล็อต\n`/coinflip` - ทายหัวก้อย\n`/rob` - แอบปล้นผู้เล่น', inline: false },
-      { name: '🏪 ตลาดมืด (Market)', value: '`/market` - ดูของในตลาด\n`/sell` - ตั้งขายไอเทม\n`/buymarket` - ซื้อของจากคนอื่น', inline: false },
       { name: '🛡️ แอดมิน & ระบบ', value: '`/purge` - ลบข้อความ\n`/invite` - สร้างลิงก์ถาวร\n`/setnews` - ตั้งค่าช่องรายงาน\n`/testnews` - ตัวอย่างรายงาน\n`/testtax` - จำลองเก็บภาษี\n`/setloanlimit` - ตั้งค่าวงเงินกู้\n`/setrole_salary` - ตั้งค่าเงินเดือนยศ\n`/list_role_salaries` - ดูรายการเงินเดือน\n`/setmoney1day` - ตั้งค่าแจกเงินรายวัน\n`/log` - ดูประวัติธุรกรรม\n`/help` - ดูทั้งหมด\n`/ping` - ตรวจสอบความหน่วงบอท', inline: false }
     );
 

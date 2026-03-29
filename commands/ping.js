@@ -26,7 +26,7 @@ module.exports = {
         { name: '🌐 การเชื่อมต่อดิสคอร์ด (API Latency)', value: `**${apiLatency}** ms`, inline: true }
       )
       .setTimestamp()
-      .setFooter({ text: 'Arlington Bot Status' });
+      .setFooter({ text: 'Thailand Bot status' });
 
     // แก้ไขข้อความเดิมเป็นกล่อง Embed
     await interaction.editReply({ content: null, embeds: [embed] });

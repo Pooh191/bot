@@ -25,7 +25,7 @@ module.exports = {
       if (interaction.isButton() && interaction.customId === 'citizen_request') {
         const modal = new ModalBuilder()
           .setCustomId('citizen_form')
-          .setTitle('แบบฟอร์มขอสัญชาติอาร์ลิงตัน');
+          .setTitle('แบบฟอร์มขอสัญชาติไทย');
 
         const nameInput = new TextInputBuilder()
           .setCustomId('fullname')

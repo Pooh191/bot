@@ -46,9 +46,9 @@ module.exports = (client) => {
         .setTitle('📊 รายงานเศรษฐกิจประจำวันที่ 08:00')
         .setDescription('ข้อมูลสถิติเศรษฐกิจประจำวันที่ส่งโดยอัตโนมัติ')
         .addFields(
-          { name: '💵 เงินสดรวม', value: `${totalCash.toLocaleString()} DL Arlington`, inline: true },
-          { name: '🏦 เงินในธนาคารรวม', value: `${totalBank.toLocaleString()} DL Arlington`, inline: true },
-          { name: '📈 รวมทั้งหมด', value: `${total.toLocaleString()} DL Arlington`, inline: true }
+          { name: '💵 เงินสดรวม', value: `${totalCash.toLocaleString()} บาท (THB)`, inline: true },
+          { name: '🏦 เงินในธนาคารรวม', value: `${totalBank.toLocaleString()} บาท (THB)`, inline: true },
+          { name: '📈 รวมทั้งหมด', value: `${total.toLocaleString()} บาท (THB)`, inline: true }
         )
         .setTimestamp()
         .setFooter({ text: 'กรมสรรพกร กระทรวงเศรษฐกิจและสิ่งแวดล้อม', iconURL: 'https://media.discordapp.net/attachments/1367228675640262707/1367228714475327559/Government_House.png?ex=6813d277&is=681280f7&hm=089260ea16173c79b9c76583d0e3ff3f946c9c61a4d7a3ea52417f373307a319&=&format=webp&quality=lossless&width=960&height=960' }) // ใส่ Footer ถ้าต้องการ

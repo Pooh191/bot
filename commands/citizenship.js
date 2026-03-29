@@ -11,7 +11,7 @@ const { saveConfig } = require('../utils/configManager');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('citizenship')
-    .setDescription('ระบบจัดการสัญชาติอาร์ลิงตัน')
+    .setDescription('ระบบจัดการสัญชาติไทย')
     .setDMPermission(false)
     .addSubcommand(subcommand =>
       subcommand
