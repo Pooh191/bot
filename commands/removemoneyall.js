@@ -14,12 +14,13 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    await interaction.deferReply();
     const amount = interaction.options.getInteger('amount');
     const users = loadUsers();
     let count = 0;
 
     for (const id in users) {
-      if (id !== 'undefined') {
+      if (id !== 'undefined' && users[id] && typeof users[id] === 'object') {
         const bal = users[id].balance || 0;
         users[id].balance = Math.max(0, bal - amount); // ไม่ให้เงินติดลบจากการหัก
         count++;
@@ -37,6 +38,6 @@ module.exports = {
       false
     );
 
-    await interaction.reply({ content: `✅ ดำเนินการหักเงิน **${amount.toLocaleString()} บาท (THB)** จากประชากรทั้งหมด **${count} คน** เรียบร้อยแล้ว! (เงินจะไม่ติดลบ หากมีเงินไม่ถึงยอดที่หัก จะถูกหักจนเหลือ 0 บาท)` });
+    await interaction.editReply({ content: `✅ ดำเนินการหักเงิน **${amount.toLocaleString()} บาท (THB)** จากประชากรทั้งหมด **${count} คน** เรียบร้อยแล้ว! (เงินจะไม่ติดลบ หากมีเงินไม่ถึงยอดที่หัก จะถูกหักจนเหลือ 0 บาท)` });
   }
 };

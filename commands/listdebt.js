@@ -8,6 +8,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
+    await interaction.deferReply();
     const users = loadUsers();
 
     // กรองหาเฉพาะคนที่มีหนี้
@@ -63,6 +64,6 @@ module.exports = {
       { name: '🔥 หนี้สะสมรวมทั้งประเทศ', value: `🚨 **${totalAllDebts.toLocaleString()} บาท (THB)**`, inline: false }
     );
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
   }
 };

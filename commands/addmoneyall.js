@@ -14,12 +14,13 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    await interaction.deferReply();
     const amount = interaction.options.getInteger('amount');
     const users = loadUsers();
     let count = 0;
 
     for (const id in users) {
-      if (id !== 'undefined') {
+      if (id !== 'undefined' && users[id] && typeof users[id] === 'object') {
         users[id].balance = (users[id].balance || 0) + amount;
         count++;
       }
@@ -37,6 +38,6 @@ module.exports = {
       false
     );
 
-    await interaction.reply({ content: `✅ ดำเนินการแจกเงิน **${amount.toLocaleString()} บาท (THB)** ให้ประชากรทั้งหมด **${count} คน** เรียบร้อยแล้ว!` });
+    await interaction.editReply({ content: `✅ ดำเนินการแจกเงิน **${amount.toLocaleString()} บาท (THB)** ให้ประชากรทั้งหมด **${count} คน** เรียบร้อยแล้ว!` });
   }
 };
