@@ -51,8 +51,9 @@ module.exports = {
     const sorted = Object.entries(users)
       .filter(([id, u]) => {
         if (id === 'undefined') return false;
-        // แสดงเฉพาะคนที่ยังอยู่ในเซิร์ฟเวอร์นี้
-        return members.has(id);
+        const member = members.get(id);
+        // แสดงเฉพาะชาวไทยที่ยังอยู่ในเซิร์ฟเวอร์
+        return member && member.roles.cache.some(role => role.name === citizenRoleName);
       })
       .sort((a, b) => {
         const totalA = (a[1].balance || 0) + (a[1].bank || 0);

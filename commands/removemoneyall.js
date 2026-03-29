@@ -19,11 +19,19 @@ module.exports = {
     const users = loadUsers();
     let count = 0;
 
+    // ดึงสมาชิกเพื่อเช็คยศสัญชาติ
+    const members = await interaction.guild.members.fetch();
+    const citizenRoleName = 'THC | Thailand Citizen';
+
     for (const id in users) {
       if (id !== 'undefined' && users[id] && typeof users[id] === 'object') {
-        const bal = users[id].balance || 0;
-        users[id].balance = Math.max(0, bal - amount); // ไม่ให้เงินติดลบจากการหัก
-        count++;
+        const member = members.get(id);
+        // เช็คว่าอยู่ในเซิร์ฟเวอร์ และมียศสัญชาติไทยหรือไม่
+        if (member && member.roles.cache.some(role => role.name === citizenRoleName)) {
+            const bal = users[id].balance || 0;
+            users[id].balance = Math.max(0, bal - amount); // ไม่ให้เงินติดลบจากการหัก
+            count++;
+        }
       }
     }
 
@@ -38,6 +46,6 @@ module.exports = {
       false
     );
 
-    await interaction.editReply({ content: `✅ ดำเนินการหักเงิน **${amount.toLocaleString()} บาท (THB)** จากประชากรทั้งหมด **${count} คน** เรียบร้อยแล้ว! (เงินจะไม่ติดลบ หากมีเงินไม่ถึงยอดที่หัก จะถูกหักจนเหลือ 0 บาท)` });
+    await interaction.editReply({ content: `✅ ดำเนินการหักเงิน **${amount.toLocaleString()} บาท (THB)** จากประชากรที่มีสัญชาติไทยทั้งหมด **${count} คน** เรียบร้อยแล้ว! (เงินจะไม่ติดลบ)` });
   }
 };

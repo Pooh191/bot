@@ -41,28 +41,40 @@ function setupDailyUpdate(client) {
       let totalCash = 0;
       let totalDebt = 0;
       let richestUser = { id: null, balance: -1 };
-      const citizenCount = Object.keys(users).length;
+      
+      // ดึงสมาชิกเพื่อเช็ค Role สัญชาติ
+      const guild = channel.guild;
+      const members = await guild.members.fetch();
+      const citizenRoleName = 'THC | Thailand Citizen';
 
       for (const [id, u] of Object.entries(users)) {
         if (id === 'undefined') continue;
         
-        // --- แจกรายได้รายวันอัตโนมัติ (แทนคำสั่ง /daily) ---
-        if (cfg.dailyIncome > 0) {
+        const member = members.get(id);
+        const isCitizen = member && member.roles.cache.some(role => role.name === citizenRoleName);
+
+        // --- แจกรายได้รายวันอัตโนมัติ (เฉพาะผู้ที่มียศสัญชาติไทย) ---
+        if (isCitizen && cfg.dailyIncome > 0) {
           u.balance = (u.balance || 0) + cfg.dailyIncome;
         }
 
-        const cash = u.balance || 0;
-        const bank = u.bank || 0;
-        const debt = (u.loanPrincipal || 0) + (u.loanInterest || 0);
-        
-        totalCash += cash;
-        totalBank += bank;
-        totalDebt += debt;
+        // เฉพาะคนที่เป็น Citizen ถึงจะถูกนำมาคำนวณสถิติรวมของประเทศ (Optional: หรือจะนับทุกคนก็ได้ แต่ที่นี่เน้น Citizen ตามคำสั่ง)
+        if (isCitizen) {
+            const cash = u.balance || 0;
+            const bank = u.bank || 0;
+            const debt = (u.loanPrincipal || 0) + (u.loanInterest || 0);
+            
+            totalCash += cash;
+            totalBank += bank;
+            totalDebt += debt;
 
-        if (cash + bank > richestUser.balance) {
-          richestUser = { id: id, balance: cash + bank };
+            if (cash + bank > richestUser.balance) {
+                richestUser = { id: id, balance: cash + bank };
+            }
         }
       }
+      
+      const citizenCount = members.filter(m => !m.user.bot && m.roles.cache.some(r => r.name === citizenRoleName)).size;
 
       const total = totalCash + totalBank;
       const prevTotal = cfg.lastTotal || total;
