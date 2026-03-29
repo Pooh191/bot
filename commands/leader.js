@@ -47,6 +47,8 @@ module.exports = {
         saveUsers(users);
     }
 
+    const citizenRoleName = 'THC | Thailand Citizen';
+
     // กรองและเรียงอันดับ
     const sorted = Object.entries(users)
       .filter(([id, u]) => {
@@ -62,7 +64,7 @@ module.exports = {
       });
 
     if (sorted.length === 0) {
-      return interaction.reply('❌ ยังไม่มีข้อมูลผู้ใช้ในระบบ หรือยังไม่มีคนรวยในที่นี้');
+      return interaction.editReply('❌ ยังไม่มีข้อมูลผู้ใช้ในระบบ หรือยังไม่มีคนรวยในที่นี้');
     }
 
     const pageSize = 10;
