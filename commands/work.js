@@ -26,16 +26,9 @@ module.exports = {
       return interaction.reply({ content: `⏳ กรุณารอ ${timeLeft} วินาที ก่อนที่จะทำงานอีกครั้ง.`, ephemeral: true });
     }
 
-    const fs = require('fs');
-    const path = require('path');
-    const jobsPath = path.join(__dirname, '..', 'data', 'jobs.json');
-    const jobs = JSON.parse(fs.readFileSync(jobsPath, 'utf8'));
-    const userJob = jobs.find(j => j.id === (users[userId].job || 'none')) || jobs[0];
-    const multiplier = userJob ? userJob.multiplier : 1.0;
-
     // คำนวณเงินที่ได้รับจากการทำงาน
     const baseMoney = Math.floor(Math.random() * (cfg.workMax - cfg.workMin + 1)) + cfg.workMin;
-    const earnedMoney = Math.floor(baseMoney * multiplier);
+    const earnedMoney = baseMoney;
 
     // เพิ่มเงินในบัญชี
     users[userId].balance += earnedMoney;
@@ -54,7 +47,7 @@ module.exports = {
     const xpResult = addXP(userId, cfg.xpWork || 10);
 
     await interaction.reply({
-      content: `💼 ในฐานะ **${userJob.name}** คุณทำงานและได้รับเงินสด **${earnedMoney.toLocaleString()} บาท (THB)** และได้รับ **${cfg.xpWork || 10} XP**!${xpResult.leveledUp ? `\n🎊 **ยินดีด้วย! คุณเลเวลอัปเป็นเลเวล ${xpResult.level} แล้ว!**` : ''}\n\nยอดเงินคงเหลือ: ${userBalance.toLocaleString()} บาท\nยอดเงินในธนาคาร: ${userBankBalance.toLocaleString()} บาท`
+      content: `💼 คุณทำงานและได้รับเงินสด **${earnedMoney.toLocaleString()} บาท (THB)** และได้รับ **${cfg.xpWork || 10} XP**!${xpResult.leveledUp ? `\n🎊 **ยินดีด้วย! คุณเลเวลอัปเป็นเลเวล ${xpResult.level} แล้ว!**` : ''}\n\nยอดเงินคงเหลือ: ${userBalance.toLocaleString()} บาท\nยอดเงินในธนาคาร: ${userBankBalance.toLocaleString()} บาท`
     });
 
     const { sendEconomyLog } = require('../utils/logger');
