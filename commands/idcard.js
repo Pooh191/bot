@@ -59,7 +59,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle('🇹🇭 บัตรประจำตัวประชาชน (Identification Card)')
             .setColor(idStatus.valid ? '#2b2d31' : '#FF0000') // แดงถ้าหมดอายุ
-            .setThumbnail(targetUser.displayAvatarURL({ size: 1024, format: 'png' }))
+            .setThumbnail(targetUser.displayAvatarURL({ size: 1024, extension: 'png' }))
             .addFields(
                 { name: 'เลขประจำตัวประชาชน (ID Number)', value: `**${formattedId}**`, inline: false },
                 { name: 'ชื่อตัวและชื่อสกุล (Name - Surname)', value: `${id.nameThai}\n(${id.nameEng})`, inline: false },
