@@ -16,6 +16,7 @@ module.exports = {
          .setDescription('จำนวนเงิน (บาท/THB) ที่จะริบ')
          .setRequired(true)),
   async execute(interaction) {
+    await interaction.deferReply();
     const target = interaction.options.getUser('target');
     const amount = interaction.options.getInteger('amount');
 
@@ -33,7 +34,7 @@ module.exports = {
       )
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
 
     await sendEconomyLog(
       interaction.client, 
