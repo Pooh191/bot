@@ -13,6 +13,13 @@ module.exports = {
     const { users, user } = getUser(userId);
 
     const cfg = loadConfig();
+    const { isIdCardValid } = require('../utils/economyUtils');
+    const idStatus = isIdCardValid(user);
+    if (!idStatus.valid) {
+      const reason = idStatus.reason === 'missing_id' ? 'คุณยังไม่มีบัตรประชาชน กรุณาทำบัตรก่อน' : `บัตรประชาชนของคุณหมดอายุแล้วเมื่อวันที่ **${idStatus.expiry}** กรุณาต่ออายุบัตรก่อน`;
+      return interaction.reply({ content: `❌ ${reason}\nใช้คำสั่ง \`/id-card\` เพื่อจัดการบัตรประชาชนของคุณ`, ephemeral: true });
+    }
+
     const now      = Date.now();
     const last     = user.lastCrime || 0;
     const cooldown = cfg.crimeCooldown;    // <— เอา *1000 ออก

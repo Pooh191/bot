@@ -17,6 +17,13 @@ module.exports = {
     }
 
     const cfg = loadConfig();
+    const { isIdCardValid } = require('../utils/economyUtils');
+    const idStatus = isIdCardValid(users[userId]);
+    if (!idStatus.valid) {
+      const reason = idStatus.reason === 'missing_id' ? 'คุณยังไม่มีบัตรประชาชน กรุณาทำบัตรก่อนเริ่มงาน' : `บัตรประชาชนของคุณหมดอายุแล้วเมื่อวันที่ **${idStatus.expiry}** กรุณาต่ออายุบัตรก่อน`;
+      return interaction.reply({ content: `❌ ${reason}\nใช้คำสั่ง \`/id-card\` เพื่อจัดการบัตรประชาชนของคุณ`, ephemeral: true });
+    }
+
     const now = Date.now();
     const lastWork = users[userId].lastWork || 0;
     const cooldown = cfg.workCooldown * 1000; // แปลงคูลดาวน์เป็นมิลลิวินาที

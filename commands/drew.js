@@ -10,6 +10,13 @@ module.exports = {
     const amt = interaction.options.getInteger('amount');
     const userId = interaction.user.id;
     const { users, user } = getUser(userId);
+    
+    const { isIdCardValid } = require('../utils/economyUtils');
+    const idStatus = isIdCardValid(user);
+    if (!idStatus.valid) {
+      const reason = idStatus.reason === 'missing_id' ? 'คุณยังไม่มีบัตรประชาชน ไม่สามารถใช้บริการธนาคารได้' : `บัตรประชาชนของคุณหมดอายุแล้วเมื่อวันที่ **${idStatus.expiry}** กรุณาต่ออายุบัตรก่อนใช้บริการธนาคาร`;
+      return interaction.reply({ content: `❌ ${reason}\nใช้คำสั่ง \`/id-card\` เพื่อจัดการบัตรประชาชนของคุณ`, ephemeral: true });
+    }
     if (user.bank < amt) return interaction.reply('❌ ยอดในธนาคารไม่พอ');
     user.bank -= amt; user.balance += amt;
     saveUsers(users);

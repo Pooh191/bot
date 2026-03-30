@@ -53,21 +53,37 @@ module.exports = {
         // จัดรูปแบบเลขบัตรให้เว้นวรรคสวยงามแบบบัตรประชาชนไทย (1 4 5 2 1 + ส่วนที่เหลือ)
         const formattedId = id.idNumber.toString().replace(/(\d{1})(\d{4})(\d{5})(\d{2})(\d{1})(.*)/, '$1 $2 $3 $4 $5 $6').trim();
 
+        const { isIdCardValid } = require('../utils/economyUtils');
+        const idStatus = isIdCardValid(user);
+        
         const embed = new EmbedBuilder()
             .setTitle('🇹🇭 บัตรประจำตัวประชาชน (Identification Card)')
-            .setColor('#2b2d31') // ใช้สีเทาเข้มให้ดูเป็นทางการและกลมกลืนกับ Discord
+            .setColor(idStatus.valid ? '#2b2d31' : '#FF0000') // แดงถ้าหมดอายุ
             .setThumbnail(targetUser.displayAvatarURL({ size: 1024, format: 'png' }))
             .addFields(
                 { name: 'เลขประจำตัวประชาชน (ID Number)', value: `**${formattedId}**`, inline: false },
                 { name: 'ชื่อตัวและชื่อสกุล (Name - Surname)', value: `${id.nameThai}\n(${id.nameEng})`, inline: false },
+                { name: 'เพศ (Gender)', value: id.gender || 'ไม่ระบุ', inline: true },
+                { name: 'อาชีพ (Occupation)', value: user.job === 'none' ? 'ว่างงาน' : user.job, inline: true },
                 { name: 'เกิดวันที่ (Date of Birth)', value: id.birthDate, inline: true },
                 { name: 'ที่อยู่ (Address)', value: province, inline: true },
                 { name: 'วันออกบัตร (Date of Issue)', value: id.issueDate, inline: true },
-                { name: 'วันบัตรหมดอายุ (Date of Expiry)', value: id.expiryDate, inline: true }
+                { name: 'วันบัตรหมดอายุ (Date of Expiry)', value: idStatus.valid ? id.expiryDate : `❌ **หมดอายุ (${id.expiryDate})**`, inline: true }
             )
             .setFooter({ text: 'กรมการปกครอง (Department of Provincial Administration)' })
             .setTimestamp();
 
-        await interaction.reply({ embeds: [embed] });
+        const components = [];
+        if (!idStatus.valid && targetUser.id === interaction.user.id) {
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('renew_id_card')
+                    .setLabel('🏙️ ต่ออายุบัตร (ค่าธรรมเนียม 500 บาท)')
+                    .setStyle(ButtonStyle.Success)
+            );
+            components.push(row);
+        }
+
+        await interaction.reply({ embeds: [embed], components: components });
     }
 };

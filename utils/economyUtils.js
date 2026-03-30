@@ -1,5 +1,5 @@
-const fs = require('fs');
 const path = require('path');
+const moment = require('moment-timezone');
 
 // Path setup
 const usersFilePath  = path.join(__dirname, '..', 'data', 'users.json');
@@ -146,5 +146,20 @@ module.exports = {
   saveResources,
 
   // Tax
-  calculateTax
+  calculateTax,
+  
+  // ID Card
+  isIdCardValid: function(user) {
+    if (!user || !user.idCard) return { valid: false, reason: 'missing_id' };
+    
+    // Parse expiry date DD/MM/YYYY
+    const expiry = moment.tz(user.idCard.expiryDate, 'DD/MM/YYYY', 'Asia/Bangkok');
+    const now = moment.tz('Asia/Bangkok');
+    
+    if (now.isAfter(expiry)) {
+        return { valid: false, reason: 'expired', expiry: user.idCard.expiryDate };
+    }
+    
+    return { valid: true };
+  }
 };

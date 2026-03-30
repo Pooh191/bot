@@ -230,9 +230,17 @@ module.exports = {
           .setRequired(true)
           .setPlaceholder("DD/MM/YYYY");
 
+        const genderInput = new TextInputBuilder()
+          .setCustomId('gender')
+          .setLabel("เพศ (ชาย/หญิง/อื่นๆ)")
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true)
+          .setPlaceholder("ระบุเพศของคุณ");
+
         modal.addComponents(
           new ActionRowBuilder().addComponents(nameThaiInput),
           new ActionRowBuilder().addComponents(nameEngInput),
+          new ActionRowBuilder().addComponents(genderInput),
           new ActionRowBuilder().addComponents(birthDateInput)
         );
 
@@ -244,6 +252,7 @@ module.exports = {
       if (interaction.isModalSubmit() && interaction.customId === 'register_id_form') {
         const nameThai = interaction.fields.getTextInputValue('name_thai');
         const nameEng = interaction.fields.getTextInputValue('name_eng');
+        const gender = interaction.fields.getTextInputValue('gender');
         const birthDate = interaction.fields.getTextInputValue('birth_date');
 
         const { users, user } = getUser(interaction.user.id);
@@ -256,11 +265,12 @@ module.exports = {
         const idNumber = interaction.user.id;
 
         const now = moment().tz('Asia/Bangkok');
-        const expiry = moment().tz('Asia/Bangkok').add(8, 'years');
+        const expiry = moment().tz('Asia/Bangkok').add(5, 'months'); // แก้เป็น 5 เดือนตามขอ
 
         user.idCard = {
             nameThai,
             nameEng,
+            gender,
             birthDate,
             idNumber,
             issueDate: now.format('DD/MM/YYYY'),
@@ -272,6 +282,61 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle('✅ ลงทะเบียนบัตรประชาชนสำเร็จ')
             .setDescription(`ออกบัตรประชาชนให้คุณ <@${interaction.user.id}> เรียบร้อยแล้ว!`)
+            .setColor('Green')
+            .setTimestamp();
+
+        await interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
+        return;
+      }
+
+      // ✅ จัดการปุ่มต่ออายุบัตรประชาชน (Renew)
+      if (interaction.isButton() && interaction.customId === 'renew_id_card') {
+        const { user } = getUser(interaction.user.id);
+        const renewalFee = 500;
+
+        if (user.balance < renewalFee) {
+            return interaction.reply({ content: `❌ คุณมีเงินไม่พอสำหรับการต่ออายุบัตร (ต้องใช้ ${renewalFee.toLocaleString()} บาท)`, flags: [MessageFlags.Ephemeral] });
+        }
+
+        const modal = new ModalBuilder()
+          .setCustomId('renew_id_form')
+          .setTitle('คำร้องขอต่ออายุบัตรประชาชน');
+
+        const nameThaiInput = new TextInputBuilder()
+          .setCustomId('name_thai')
+          .setLabel("ยืนยันชื่อ-สกุล (ภาษาไทย)")
+          .setStyle(TextInputStyle.Short)
+          .setValue(user.idCard ? user.idCard.nameThai : '')
+          .setRequired(true);
+
+        const row = new ActionRowBuilder().addComponents(nameThaiInput);
+        modal.addComponents(row);
+
+        await interaction.showModal(modal);
+        return;
+      }
+
+      // ✅ จัดการส่งฟอร์มต่ออายุ
+      if (interaction.isModalSubmit() && interaction.customId === 'renew_id_form') {
+        const { users, user } = getUser(interaction.user.id);
+        const renewalFee = 500;
+
+        if (user.balance < renewalFee) {
+            return await interaction.reply({ content: '❌ เงินของคุณไม่พอระหว่างดำเนินการ', flags: [MessageFlags.Ephemeral] });
+        }
+
+        const now = moment().tz('Asia/Bangkok');
+        const expiry = moment().tz('Asia/Bangkok').add(5, 'months');
+
+        user.balance -= renewalFee;
+        user.idCard.issueDate = now.format('DD/MM/YYYY');
+        user.idCard.expiryDate = expiry.format('DD/MM/YYYY');
+
+        saveUsers(users);
+
+        const embed = new EmbedBuilder()
+            .setTitle('✅ ต่ออายุบัตรประชาชนสำเร็จ')
+            .setDescription(`ต่ออายุบัตรของคุณ <@${interaction.user.id}> เรียบร้อยแล้ว!\n💸 เสียค่าธรรมเนียม: **${renewalFee.toLocaleString()} บาท**\n📅 วันหมดอายุใหม่: **${user.idCard.expiryDate}**`)
             .setColor('Green')
             .setTimestamp();
 

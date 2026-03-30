@@ -15,6 +15,13 @@ module.exports = {
     const userId = interaction.user.id;
     const amount = interaction.options.getInteger('amount');
     const users = getUsers();
+    
+    const { isIdCardValid } = require('../utils/economyUtils');
+    const idStatus = isIdCardValid(users[userId]);
+    if (!idStatus.valid) {
+      const reason = idStatus.reason === 'missing_id' ? 'คุณยังไม่มีบัตรประชาชน ไม่สามารถใช้บริการธนาคารได้' : `บัตรประชาชนของคุณหมดอายุแล้วเมื่อวันที่ **${idStatus.expiry}** กรุณาต่ออายุบัตรก่อนใช้บริการธนาคาร`;
+      return interaction.reply({ content: `❌ ${reason}\nใช้คำสั่ง \`/id-card\` เพื่อจัดการบัตรประชาชนของคุณ`, ephemeral: true });
+    }
 
     // สร้างข้อมูลเริ่มต้นหากยังไม่มี หรือเติมค่า default ให้ครบ
     if (!users[userId]) {
