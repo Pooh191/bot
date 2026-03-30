@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, ChannelType, Partials } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, ChannelType, Partials, ActivityType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const { setupDailyUpdate } = require('./scheduler/dailyUpdate');
@@ -109,11 +109,11 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 })();
 
 const statuses = [
-  { name: 'กำลังเล่นเกม', type: 'PLAYING' },
-  { name: 'กำลังเฝ้าดู server', type: 'WATCHING' },
-  { name: 'กำลังฟังเพลง', type: 'LISTENING' },
-  { name: 'กำลังแข่งขัน', type: 'COMPETING' },
-  { name: 'อยู่ในโหมดพักผ่อน', type: 'IDLE' },
+  { name: 'ประเทศไทย', type: ActivityType.Playing },
+  { name: 'ประชาชนชาวไทย', type: ActivityType.Watching },
+  { name: 'เพลงชาติไทย', type: ActivityType.Listening },
+  { name: 'การเลือกตั้ง', type: ActivityType.Competing },
+  { name: 'โหมดประหยัดพลังงาน', type: ActivityType.Watching },
 ];
 
 client.on('ready', () => {
@@ -127,7 +127,7 @@ client.on('ready', () => {
         name: randomStatus.name,
         type: randomStatus.type
       }],
-      status: 'online', // สถานะออนไลน์
+      status: 'online',
     });
   };
 
