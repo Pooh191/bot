@@ -312,8 +312,11 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 client.on('messageCreate', async (message) => {
   if (!message.guild || !message.author || message.author.bot) return;
 
-  // Add XP
-  const result = addXP(message.author.id, Math.floor(Math.random() * 5) + 1);
+  // Add XP (Message)
+  const { users, user } = getUser(message.author.id);
+  const result = addXP(user, Math.floor(Math.random() * 5) + 1);
+  saveUsers(users);
+
   if (result.leveledUp) {
     message.channel.send(`🎊 ยินดีด้วยคุณ <@${message.author.id}>! เลเวลของคุณเพิ่มขึ้นเป็น **Level ${result.level}** แล้ว!`);
   }

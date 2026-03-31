@@ -17,12 +17,6 @@ module.exports = {
     }
 
     const cfg = loadConfig();
-    const { isIdCardValid } = require('../utils/economyUtils');
-    const idStatus = isIdCardValid(users[userId]);
-    if (!idStatus.valid) {
-      const reason = idStatus.reason === 'missing_id' ? 'คุณยังไม่มีบัตรประชาชน กรุณาทำบัตรก่อนเริ่มงาน' : `บัตรประชาชนของคุณหมดอายุแล้วเมื่อวันที่ **${idStatus.expiry}** กรุณาต่ออายุบัตรก่อน`;
-      return interaction.reply({ content: `❌ ${reason}\nใช้คำสั่ง \`/id-card\` เพื่อจัดการบัตรประชาชนของคุณ`, ephemeral: true });
-    }
 
     const now = Date.now();
     const lastWork = users[userId].lastWork || 0;
@@ -43,15 +37,14 @@ module.exports = {
     // อัพเดตเวลา
     users[userId].lastWork = now;
 
-    // เซฟข้อมูลผู้ใช้
+    const { addXP } = require('../utils/economyUtils');
+    const xpResult = addXP(users[userId], cfg.xpWork || 10);
+
+    // เซฟข้อมูลผู้ใช้ (รอบเดียวจบ)
     saveUsers(users);
 
-    // แสดงยอดเงิน
-    const userBankBalance = users[userId].bank;
     const userBalance = users[userId].balance;
-
-    const { addXP } = require('../utils/economyUtils');
-    const xpResult = addXP(userId, cfg.xpWork || 10);
+    const userBankBalance = users[userId].bank;
 
     await interaction.reply({
       content: `💼 คุณทำงานและได้รับเงินสด **${earnedMoney.toLocaleString()} บาท (THB)** และได้รับ **${cfg.xpWork || 10} XP**!${xpResult.leveledUp ? `\n🎊 **ยินดีด้วย! คุณเลเวลอัปเป็นเลเวล ${xpResult.level} แล้ว!**` : ''}\n\nยอดเงินคงเหลือ: ${userBalance.toLocaleString()} บาท\nยอดเงินในธนาคาร: ${userBankBalance.toLocaleString()} บาท`

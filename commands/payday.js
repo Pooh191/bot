@@ -61,9 +61,9 @@ module.exports = {
     const xpReward = 200; // Daily salary also gives good XP
     user.balance += bestSalary;
     user.lastPayday = now;
+    
+    const xpResult = addXP(user, xpReward);
     saveUsers(users);
-
-    const xpResult = addXP(userId, xpReward);
 
     const embed = new EmbedBuilder()
       .setTitle('💵 Payday! วันเงินเดือนออก')

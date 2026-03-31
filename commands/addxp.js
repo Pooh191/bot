@@ -20,8 +20,9 @@ module.exports = {
     const targetUser = interaction.options.getUser('user');
     const amount = interaction.options.getInteger('amount');
 
-    // ใช้ฟังก์ชัน addXP ที่มีอยู่ ซึ่งรวมถึงการเช็คเลเวลอัปอัตโนมัติ
-    const result = addXP(targetUser.id, amount);
+    const { users, user } = getUser(targetUser.id);
+    const result = addXP(user, amount);
+    saveUsers(users);
 
     const embed = new EmbedBuilder()
       .setTitle('✨ การมอบค่าประสบการณ์ (Admin)')

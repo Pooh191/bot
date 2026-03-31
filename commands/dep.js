@@ -14,47 +14,32 @@ module.exports = {
   async execute(interaction) {
     const userId = interaction.user.id;
     const amount = interaction.options.getInteger('amount');
-    const users = getUsers();
-    
-    const { isIdCardValid } = require('../utils/economyUtils');
-    const idStatus = isIdCardValid(users[userId]);
-    if (!idStatus.valid) {
-      const reason = idStatus.reason === 'missing_id' ? 'คุณยังไม่มีบัตรประชาชน ไม่สามารถใช้บริการธนาคารได้' : `บัตรประชาชนของคุณหมดอายุแล้วเมื่อวันที่ **${idStatus.expiry}** กรุณาต่ออายุบัตรก่อนใช้บริการธนาคาร`;
-      return interaction.reply({ content: `❌ ${reason}\nใช้คำสั่ง \`/id-card\` เพื่อจัดการบัตรประชาชนของคุณ`, ephemeral: true });
-    }
-
-    // สร้างข้อมูลเริ่มต้นหากยังไม่มี หรือเติมค่า default ให้ครบ
-    if (!users[userId]) {
-      users[userId] = { balance: 0, bank: 0, lastWork: 0 };
-    } else {
-      users[userId].balance = Number(users[userId].balance) || 0;
-      users[userId].bank    = Number(users[userId].bank) || 0;
-      users[userId].lastWork = users[userId].lastWork || 0;
-    }
+    const { getUser, saveUsers } = require('../utils/economyUtils');
+    const { users, user } = getUser(userId);
 
     // ตรวจสอบว่ายอดเงินในกระเป๋าพอฝากหรือไม่
-    if (users[userId].balance < amount) {
-      return interaction.reply({ content: '❌ ยอดเงินไม่เพียงพอในกระเป๋า', ephemeral: true });
+    if (user.balance < amount) {
+      return interaction.reply({ content: `❌ คุณมียอดเงินสดไม่พอฝาก (ขาดอีก ${(amount - user.balance).toLocaleString()} บาท)`, ephemeral: true });
     }
 
     // ทำการฝาก
-    users[userId].balance -= amount;
-    users[userId].bank    += amount;
+    user.balance -= amount;
+    user.bank     = (user.bank || 0) + amount; // แก้ไขให้ถูกต้อง
 
     // บันทึกข้อมูล
     saveUsers(users);
 
     await interaction.reply(
       `✅ คุณฝากเงิน **${amount.toLocaleString()} บาท (THB)** เข้าธนาคารเรียบร้อย\n` +
-      `• กระเป๋า: ${users[userId].balance.toLocaleString()} บาท\n` +
-      `• ธนาคาร: ${users[userId].bank.toLocaleString()} บาท`
+      `• กระเป๋า: ${user.balance.toLocaleString()} บาท\n` +
+      `• ธนาคาร: ${user.bank.toLocaleString()} บาท`
     );
 
     const { sendEconomyLog } = require('../utils/logger');
     await sendEconomyLog(
       interaction.client, 
       'ทำธุรกรรมฝากเงิน (Deposit)', 
-      `**ผู้ทำรายการ:** <@${userId}>\n**ฝากเข้าแบงค์:** ${amount.toLocaleString()} บาท\n**ยอดเงินสดเหลือ:** ${users[userId].balance.toLocaleString()} บาท\n**ยอดเงินในแบงค์:** ${users[userId].bank.toLocaleString()} บาท`, 
+      `**ผู้ทำรายการ:** <@${userId}>\n**ฝากเข้าแบงค์:** ${amount.toLocaleString()} บาท\n**ยอดเงินสดเหลือ:** ${user.balance.toLocaleString()} บาท\n**ยอดเงินในแบงค์:** ${user.bank.toLocaleString()} บาท`, 
       'Blue',
       true
     );

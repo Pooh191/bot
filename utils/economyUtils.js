@@ -22,8 +22,9 @@ function saveUsers(users) {
 
 function getUser(userId) {
   const users = loadUsers();
+  const cfg = loadConfig();
+  
   if (!users[userId]) {
-    const cfg = loadConfig();
     users[userId] = {
       id: userId,
       balance: cfg.startingBalance || 0,
@@ -33,47 +34,39 @@ function getUser(userId) {
       lastWork: 0,
       lastSlut: 0,
       lastCrime: 0,
-      lastCrime: 0,
       job: 'none',
       loanPrincipal: 0,
-      loanInterest: 0,
-      idCard: null
+      loanInterest: 0
     };
     saveUsers(users);
+  } else {
+    // กำหนดค่าเริ่มต้นสำหรับฟิลด์ที่อาจจะหายไป เพื่อป้องกันค่า undefined
+    if (users[userId].balance === undefined) users[userId].balance = 0;
+    if (users[userId].bank === undefined) users[userId].bank = 0;
+    if (users[userId].xp === undefined) users[userId].xp = 0;
+    if (users[userId].level === undefined) users[userId].level = 1;
+    if (users[userId].job === undefined) users[userId].job = 'none';
+    if (users[userId].loanPrincipal === undefined) users[userId].loanPrincipal = 0;
+    if (users[userId].loanInterest === undefined) users[userId].loanInterest = 0;
+    
+    // ลบ Migration loanDebt ที่เสี่ยงออก (ถ้าไม่มีใครใช้แล้ว)
+    if (users[userId].loanDebt !== undefined) delete users[userId].loanDebt;
   }
-  // backwards compatibility for existing users
-  if (users[userId].xp === undefined) users[userId].xp = 0;
-  if (users[userId].level === undefined) users[userId].level = 1;
-  if (users[userId].job === undefined) users[userId].job = 'none';
-  if (users[userId].idCard === undefined) users[userId].idCard = null;
-  
-  // Migration for old loanDebt
-  if (users[userId].loanDebt !== undefined) {
-    users[userId].loanPrincipal = Math.floor(users[userId].loanDebt * 0.95);
-    users[userId].loanInterest = Math.ceil(users[userId].loanDebt * 0.05);
-    delete users[userId].loanDebt;
-  }
-  
-  if (users[userId].loanPrincipal === undefined) users[userId].loanPrincipal = 0;
-  if (users[userId].loanInterest === undefined) users[userId].loanInterest = 0;
 
   return { users, user: users[userId] };
 }
 
-function addXP(userId, amount) {
-  const { users, user } = getUser(userId);
-  user.xp += amount;
+function addXP(user, amount) {
+  user.xp = (user.xp || 0) + amount;
   
   // Basic level up formula: Level * 100 XP
-  const nextLevelXP = user.level * 100;
+  const nextLevelXP = (user.level || 1) * 100;
   if (user.xp >= nextLevelXP) {
     user.xp -= nextLevelXP;
-    user.level += 1;
-    saveUsers(users);
+    user.level = (user.level || 1) + 1;
     return { leveledUp: true, level: user.level };
   }
   
-  saveUsers(users);
   return { leveledUp: false };
 }
 
@@ -149,18 +142,4 @@ module.exports = {
   // Tax
   calculateTax,
   
-  // ID Card
-  isIdCardValid: function(user) {
-    if (!user || !user.idCard) return { valid: false, reason: 'missing_id' };
-    
-    // Parse expiry date DD/MM/YYYY
-    const expiry = moment.tz(user.idCard.expiryDate, 'DD/MM/YYYY', 'Asia/Bangkok');
-    const now = moment.tz('Asia/Bangkok');
-    
-    if (now.isAfter(expiry)) {
-        return { valid: false, reason: 'expired', expiry: user.idCard.expiryDate };
-    }
-    
-    return { valid: true };
-  }
 };

@@ -10,12 +10,6 @@ module.exports = {
     const userId = interaction.user.id;
     const { users, user } = getUser(userId);
     const cfg = loadConfig();
-    const { isIdCardValid } = require('../utils/economyUtils');
-    const idStatus = isIdCardValid(user);
-    if (!idStatus.valid) {
-      const reason = idStatus.reason === 'missing_id' ? 'คุณยังไม่มีบัตรประชาชน กรุณาทำบัตรก่อน' : `บัตรประชาชนของคุณหมดอายุแล้วเมื่อวันที่ **${idStatus.expiry}** กรุณาต่ออายุบัตรก่อน`;
-      return interaction.reply({ content: `❌ ${reason}\nใช้คำสั่ง \`/id-card\` เพื่อจัดการบัตรประชาชนของคุณ`, ephemeral: true });
-    }
 
     const now       = Date.now();
     const lastSlut  = user.lastSlut || 0;
@@ -30,10 +24,10 @@ module.exports = {
     user.balance   += earned;
     user.lastSlut   = now;
 
-    saveUsers(users);
-
     const { addXP } = require('../utils/economyUtils');
-    const xpResult  = addXP(userId, cfg.xpSlut || 20);
+    const xpResult  = addXP(user, cfg.xpSlut || 20);
+
+    saveUsers(users);
 
     await interaction.reply({
       content: `💼 คุณไปทำงานสไตล์สีเทา (Slut) และได้รับเงินสด **${earned.toLocaleString()} บาท (THB)** และได้รับ **${cfg.xpSlut || 20} XP**!${xpResult.leveledUp ? `\n🎊 **ยินดีด้วย! คุณเลเวลอัปเป็นเลเวล ${xpResult.level} แล้ว!**` : ''}\nยอดเงินคงเหลือ: ${user.balance.toLocaleString()} บาท`

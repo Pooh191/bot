@@ -1,0 +1,30 @@
+[
+  {
+    "id": "burger",
+    "name": "🍔 เบอร์เกอร์",
+    "price": 150,
+    "description": "อาหารเพิ่มพลัง (ลดคูลดาวน์งานลง 30 วินาทีชั่วคราว)",
+    "effect": "work_cooldown_reset"
+  },
+  {
+    "id": "coffee",
+    "name": "☕ กาแฟเข้มข้น",
+    "price": 300,
+    "description": "ตื่นตัวตลอดเวลา (รับ XP เพิ่มขึ้น x2 ในครั้งถัดไป)",
+    "effect": "xp_boost"
+  },
+  {
+    "id": "car",
+    "name": "🚗 รถสปอร์ต",
+    "price": 500000,
+    "description": "อวดความรวยในโปรไฟล์",
+    "effect": "none"
+  },
+  {
+    "id": "vip",
+    "name": "💎 ยศ VIP",
+    "price": 1000000,
+    "description": "สมัครเป็นชนชั้นสูง",
+    "effect": "none"
+  }
+]
