@@ -3,7 +3,7 @@ const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, Chann
 const fs = require('fs');
 const path = require('path');
 const { setupDailyUpdate } = require('./scheduler/dailyUpdate');
-const { loadUsers, saveUsers, loadResources, saveResources, loadConfig, saveConfig, addXP } = require('./utils/economyUtils');
+const { loadUsers, saveUsers, getUser, loadResources, saveResources, loadConfig, saveConfig, addXP } = require('./utils/economyUtils');
 const { scheduleAll } = require('./scheduler/scheduler');
 
 // สร้างโฟลเดอร์ data ถ้ายังไม่มี
