@@ -19,9 +19,13 @@ module.exports = {
         .setDescription('ข้อความที่จะประกาศ (ใช้ \\n เพื่อขึ้นบรรทัดใหม่)')
         .setRequired(true))
     .addStringOption(option =>
-      option.setName('datetime')
-        .setDescription('ระบุเวลา (เช่น 18:30, 2026-04-01 15:30) หรือจำนวนนาที (เช่น 10m, 2h)')
+      option.setName('time')
+        .setDescription('ระบุเวลา (เช่น 18:30) หรือจำนวนนาที (เช่น 10m, 2h)')
         .setRequired(true))
+    .addStringOption(option =>
+      option.setName('date')
+        .setDescription('ระบุวันที่ (เช่น 01/04/2026 หรือ 2026-04-01) หากไม่กรอกคือวันนี้')
+        .setRequired(false))
     .addRoleOption(option =>
       option.setName('role')
         .setDescription('ยศที่ต้องการแท็ก (ไม่บังคับ)')
@@ -33,7 +37,8 @@ module.exports = {
   async execute(interaction) {
     const channel = interaction.options.getChannel('channel');
     const msgContent = interaction.options.getString('message');
-    let datetimeInput = interaction.options.getString('datetime').trim();
+    let timeInput = interaction.options.getString('time').trim();
+    let dateInput = interaction.options.getString('date') ? interaction.options.getString('date').trim() : null;
     const role = interaction.options.getRole('role');
     const imageUrl = interaction.options.getString('image_url');
 
@@ -44,7 +49,7 @@ module.exports = {
     let targetTime;
 
     // ตรวจสอบว่าเป็นรูปแบบ 10m, 2h หรือไม่
-    const relativeMatch = datetimeInput.match(/^(\d+)([mh])$/i);
+    const relativeMatch = !dateInput && timeInput.match(/^(\d+)([mh])$/i);
     if (relativeMatch) {
       const value = parseInt(relativeMatch[1]);
       const unit = relativeMatch[2].toLowerCase();
@@ -52,18 +57,29 @@ module.exports = {
       if (unit === 'm') targetTime.add(value, 'minutes');
       if (unit === 'h') targetTime.add(value, 'hours');
     } else {
-      // ตรวจสอบว่าเป็นรูปแบบ YYYY-MM-DD HH:mm หรือ HH:mm
-      if (/^\d{1,2}:\d{2}$/.test(datetimeInput)) {
-        const today = moment().tz('Asia/Bangkok').format('YYYY-MM-DD');
-        datetimeInput = `${today} ${datetimeInput}`;
+      let combinedStr = '';
+      if (dateInput) {
+        // ถ้าระบุรูปแบบเวลามาเป็น YYYY-MM-DD HH:mm เต็มๆ แล้วในช่องเวลา ก็ใช้ช่องเดียว
+        if (timeInput.includes(' ')) {
+          combinedStr = timeInput;
+        } else {
+          combinedStr = `${dateInput} ${timeInput}`;
+        }
+      } else {
+        if (/^\d{1,2}:\d{2}$/.test(timeInput)) {
+          const today = moment().tz('Asia/Bangkok').format('YYYY-MM-DD');
+          combinedStr = `${today} ${timeInput}`;
+        } else {
+          combinedStr = timeInput; // สมมติว่าพิมพ์มาเต็มๆในช่อง time
+        }
       }
       
-      targetTime = moment.tz(datetimeInput, ['YYYY-MM-DD HH:mm', 'YYYY/MM/DD HH:mm', 'DD-MM-YYYY HH:mm', 'DD/MM/YYYY HH:mm'], 'Asia/Bangkok');
+      targetTime = moment.tz(combinedStr, ['YYYY-MM-DD HH:mm', 'YYYY/MM/DD HH:mm', 'DD-MM-YYYY HH:mm', 'DD/MM/YYYY HH:mm', 'D/M/YYYY HH:mm', 'M/D/YYYY HH:mm'], 'Asia/Bangkok');
     }
 
     if (!targetTime || !targetTime.isValid()) {
       return interaction.reply({ 
-        content: '❌ รูปแบบเวลาไม่ถูกต้อง!\nกรุณาใช้รูปแบบ `HH:mm` (เช่น 18:30) หรือ `YYYY-MM-DD HH:mm` หรือ `10m`, `2h`', 
+        content: '❌ รูปแบบเวลาไม่ถูกต้อง!\nกรุณาระบุ `time` เช่น 18:30 และ `date` เช่น 01/04/2026\nหรือพิมพ์แค่ `time` เป็น 10m (ไม่ต้องใส่วันที่)', 
         ephemeral: true 
       });
     }
