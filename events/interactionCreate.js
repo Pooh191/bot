@@ -114,7 +114,8 @@ module.exports = {
           return interaction.reply({ content: '❌ เซสชันหมดอายุหรือฟอร์มไม่ถูกต้อง กรุณาตั้งเวลาใหม่อีกครั้ง', ephemeral: true });
         }
         
-        const messageInput = interaction.fields.getTextInputValue('announce_message');
+        let messageInput = interaction.fields.getTextInputValue('announce_message');
+        messageInput = messageInput.replace(/\\n/g, '\n'); // รองรับการพิมพ์ \n ตรงๆ
         
         const fileP = path.join(__dirname, '..', 'data', 'scheduled_messages.json');
         let schedules = [];

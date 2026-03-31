@@ -220,14 +220,21 @@ const scheduleMessageJob = new CronJob('* * * * *', async () => {
           finalMessage = `<@&${schedule.roleId}>\n${finalMessage}`;
         }
 
-        const options = { content: finalMessage };
-        
-        if (schedule.imageUrl) {
-          const embed = new EmbedBuilder().setImage(schedule.imageUrl).setColor('#00AAFF');
-          options.embeds = [embed];
-        }
+        // ข้อความ Discord ถูกจำกัดไว้ที่ 2000 ตัวอักษร/ครั้ง หากยาวเกิน ต้องแบ่งส่งทีละท่อน
+        const chunks = finalMessage.match(/[\s\S]{1,1990}/g) || [];
 
-        await channel.send(options);
+        for (let i = 0; i < chunks.length; i++) {
+          const options = { content: chunks[i] };
+          
+          // แนบรูปเข้าไปในก้อนสุดท้ายเท่านั้น
+          if (i === chunks.length - 1 && schedule.imageUrl) {
+            const embed = new EmbedBuilder().setImage(schedule.imageUrl).setColor('#00AAFF');
+            options.embeds = [embed];
+          }
+
+          await channel.send(options);
+        }
+        
         console.log(`✅ [Auto-Announce] ส่งประกาศอัตโนมัติสำเร็จในห้อง #${channel.name}`);
       } catch (err) {
         console.error('❌ [Auto-Announce] ผิดพลาดในการส่งประกาศอัตโนมัติ:', err);
