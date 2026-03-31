@@ -107,6 +107,64 @@ module.exports = {
         return;
       }
 
+      // ✅ แบบฟอร์มตั้งเวลาประกาศข้อความยาวๆ
+      if (interaction.isModalSubmit() && interaction.customId.startsWith('sa_modal_')) {
+        const cachedData = global.tempAnnounceCache?.get(interaction.customId);
+        if (!cachedData) {
+          return interaction.reply({ content: '❌ เซสชันหมดอายุหรือฟอร์มไม่ถูกต้อง กรุณาตั้งเวลาใหม่อีกครั้ง', ephemeral: true });
+        }
+        
+        const messageInput = interaction.fields.getTextInputValue('announce_message');
+        
+        const fileP = path.join(__dirname, '..', 'data', 'scheduled_messages.json');
+        let schedules = [];
+        if (fs.existsSync(fileP)) {
+          try {
+            schedules = JSON.parse(fs.readFileSync(fileP, 'utf8'));
+            if (!Array.isArray(schedules)) schedules = [];
+          } catch(e) { schedules = []; }
+        }
+
+        const newSchedule = {
+          id: Date.now().toString(),
+          guildId: cachedData.guildId,
+          channelId: cachedData.channelId,
+          message: messageInput,
+          roleId: cachedData.roleId,
+          imageUrl: cachedData.imageUrl,
+          authorId: interaction.user.id,
+          executeAt: cachedData.executeAt
+        };
+
+        schedules.push(newSchedule);
+        
+        const dir = path.dirname(fileP);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        
+        fs.writeFileSync(fileP, JSON.stringify(schedules, null, 2), 'utf8');
+
+        // Clean up
+        global.tempAnnounceCache.delete(interaction.customId);
+
+        let previewMsg = messageInput.length > 1000 ? messageInput.substring(0, 1000) + '...' : messageInput;
+
+        const replyEmbed = new EmbedBuilder()
+          .setColor('#00FF00')
+          .setTitle('✅ ตั้งเวลาประกาศสำเร็จ')
+          .setDescription(`ระบบจะส่งข้อความประกาศในเวลา **${cachedData.formattedTime}**`)
+          .addFields(
+            { name: '📍 ไปที่ห้อง', value: `<#${cachedData.channelId}>`, inline: true },
+            { name: '🏷️ ยศที่แท็ก', value: cachedData.roleId ? `<@&${cachedData.roleId}>` : 'ไม่มี', inline: true },
+            { name: '🕒 เวลาที่จะส่ง', value: `<t:${Math.floor(cachedData.executeAt / 1000)}:R>`, inline: false },
+            { name: '📝 ข้อความตัวอย่าง', value: previewMsg }
+          );
+
+        if (cachedData.imageUrl) replyEmbed.setImage(cachedData.imageUrl);
+
+        await interaction.reply({ embeds: [replyEmbed], ephemeral: true });
+        return;
+      }
+
       // ✅ จัดการปุ่มอนุมัติ/ปฏิเสธสัญชาติ
       if (interaction.isButton() && (interaction.customId.startsWith('approve_citizen_') || interaction.customId.startsWith('reject_citizen_'))) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });

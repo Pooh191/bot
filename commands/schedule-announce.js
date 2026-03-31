@@ -1,7 +1,9 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const moment = require('moment-timezone');
+
+global.tempAnnounceCache = global.tempAnnounceCache || new Map();
 
 const filePath = path.join(__dirname, '..', 'data', 'scheduled_messages.json');
 
@@ -13,10 +15,6 @@ module.exports = {
     .addChannelOption(option =>
       option.setName('channel')
         .setDescription('ห้องที่ต้องการส่งประกาศ')
-        .setRequired(true))
-    .addStringOption(option =>
-      option.setName('message')
-        .setDescription('ข้อความที่จะประกาศ (ใช้ \\n เพื่อขึ้นบรรทัดใหม่)')
         .setRequired(true))
     .addStringOption(option =>
       option.setName('time')
@@ -36,7 +34,6 @@ module.exports = {
         .setRequired(false)),
   async execute(interaction) {
     const channel = interaction.options.getChannel('channel');
-    const msgContent = interaction.options.getString('message');
     let timeInput = interaction.options.getString('time').trim();
     let dateInput = interaction.options.getString('date') ? interaction.options.getString('date').trim() : null;
     const role = interaction.options.getRole('role');
@@ -88,55 +85,32 @@ module.exports = {
       return interaction.reply({ content: '❌ ไม่สามารถตั้งเวลาในอดีตได้', ephemeral: true });
     }
 
-    // โหลดไฟล์ประวัติ
-    let schedules = [];
-    if (fs.existsSync(filePath)) {
-      try {
-        schedules = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        if (!Array.isArray(schedules)) schedules = [];
-      } catch(e) {
-        schedules = [];
-      }
-    }
-
-    const newSchedule = {
-      id: Date.now().toString(),
+    // Store options in global cache
+    const modalId = `sa_modal_${interaction.user.id}_${Date.now()}`;
+    global.tempAnnounceCache.set(modalId, {
       guildId: interaction.guildId,
       channelId: channel.id,
-      message: msgContent.replace(/\\n/g, '\n'), // รองรับการขึ้นบรรทัดใหม่ด้วย \n
       roleId: role ? role.id : null,
       imageUrl: imageUrl || null,
-      authorId: interaction.user.id,
-      executeAt: targetTime.valueOf()
-    };
+      executeAt: targetTime.valueOf(),
+      formattedTime: targetTime.format('DD/MM/YYYY HH:mm')
+    });
 
-    schedules.push(newSchedule);
-    
-    // ตรวจสอบว่า directory /data/ มีหรือไม่ (ปกติควรมีอยู่แล้ว)
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    
-    fs.writeFileSync(filePath, JSON.stringify(schedules, null, 2), 'utf8');
+    // Create Modal
+    const modal = new ModalBuilder()
+      .setCustomId(modalId)
+      .setTitle('แบบฟอร์มประกาศข้อความอัตโนมัติ');
 
-    const formattedTime = targetTime.format('DD/MM/YYYY HH:mm');
+    const messageInput = new TextInputBuilder()
+      .setCustomId('announce_message')
+      .setLabel('พิมพ์ข้อความ (สามารถขึ้นบรรทัดใหม่/พิมพ์ยาวได้)')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true)
+      .setMaxLength(3500);
 
-    const replyEmbed = new EmbedBuilder()
-      .setColor('#00FF00')
-      .setTitle('✅ ตั้งเวลาประกาศสำเร็จ')
-      .setDescription(`ระบบจะส่งข้อความประกาศในเวลา **${formattedTime}**`)
-      .addFields(
-        { name: '📍 ไปที่ห้อง', value: `<#${channel.id}>`, inline: true },
-        { name: '🏷️ ยศที่แท็ก', value: role ? `<@&${role.id}>` : 'ไม่มี', inline: true },
-        { name: '🕒 เวลาที่จะส่ง', value: `<t:${Math.floor(targetTime.valueOf() / 1000)}:R>`, inline: false },
-        { name: '📝 ข้อความ', value: newSchedule.message }
-      );
+    const row = new ActionRowBuilder().addComponents(messageInput);
+    modal.addComponents(row);
 
-    if (newSchedule.imageUrl) {
-      replyEmbed.setImage(newSchedule.imageUrl);
-    }
-
-    await interaction.reply({ embeds: [replyEmbed], ephemeral: true });
+    await interaction.showModal(modal);
   }
 };
