@@ -23,7 +23,8 @@ module.exports = {
     }
 
     const { users: allUsers, user: thief } = getUser(senderId);
-    const { user: victim } = getUser(target.id);
+    const victim = allUsers[target.id] || (getUser(target.id).user);
+    if (!allUsers[target.id]) allUsers[target.id] = victim;
 
     const isAdmin = interaction.member.permissions.has(PermissionsBitField.Flags.Administrator);
 

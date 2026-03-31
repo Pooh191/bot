@@ -13,17 +13,18 @@ const salaryJob = new CronJob('0 0 18 * *', async () => {
 
   if (!fs.existsSync(salariesPath)) return;
   const roleSalaries = JSON.parse(fs.readFileSync(salariesPath, 'utf8'));
-  const users = loadUsers();
   const guild = clientRef.guilds.cache.first();
-
   if (!guild) return console.error('❌ ไม่พบเซิร์ฟเวอร์ในการจ่ายเงินเดือน');
 
+  await guild.members.fetch(); // โหลดสมาชิกทั้งหมดทีเดียว เพื่อความเร็ว และลดการดึงข้อมูลรายคนในลูป
+  
+  const users = loadUsers();
   let totalPaid = 0;
   let userCount = 0;
 
   for (const userId in users) {
     try {
-      const member = await guild.members.fetch(userId).catch(() => null);
+      const member = guild.members.cache.get(userId);
       if (!member) continue;
 
       let bestSalary = 0;
@@ -53,15 +54,17 @@ const salaryJob = new CronJob('0 0 18 * *', async () => {
 // ระบบการหักภาษี (กรมสรรพากร - เสียภาษีทุกวันที่ 1 ของเดือน)
 const taxJob = new CronJob('0 0 1 * *', async () => {
   console.log('🌍 [กรมสรรพากร] กำลังเริ่มขั้นตอนการหักภาษีประจำเดือน...');
+  const guild = clientRef.guilds.cache.first();
+  if (!guild) return console.error('❌ ไม่พบเซิร์ฟเวอร์ในการหักภาษี');
+
+  await guild.members.fetch(); // โหลดสมาชิกทั้งหมดทีเดียวเพื่อรับทราบ Role ล่าสุด
+  
   const users = loadUsers();
   const { calculateTax } = require('../utils/economyUtils');
 
   let totalTaxCollected = 0;
   let detailLog = "";
   let taxpayersCount = 0;
-
-  const guild = clientRef.guilds.cache.first();
-  if (!guild) return console.error('❌ ไม่พบเซิร์ฟเวอร์ในการหักภาษี');
 
   for (let userId in users) {
     if (userId === 'undefined') continue;
@@ -89,7 +92,7 @@ const taxJob = new CronJob('0 0 1 * *', async () => {
 
       // ส่ง DM แจ้งเตือนผู้เล่น
       try {
-        const member = await guild.members.fetch(userId).catch(() => null);
+        const member = guild.members.cache.get(userId);
         if (member) {
           const personalTaxEmbed = new EmbedBuilder()
             .setColor('#FF0000')

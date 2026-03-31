@@ -29,7 +29,9 @@ module.exports = {
     }
 
     const { users: allUsers, user: sender } = getUser(senderId);
-    const { user: recipient } = getUser(target.id);
+    const recipient = allUsers[target.id] || (getUser(target.id).user);
+    // กรณีที่ recipient เพิ่งถูกสร้างใหม่โดย getUser(target.id) เราต้องแน่ใจว่ามันอยู่ใน allUsers ด้วย
+    if (!allUsers[target.id]) allUsers[target.id] = recipient;
 
     if (sender.balance < amount) {
        return interaction.reply({ content: `❌ คุณมียอดเงินในกระเป๋าไม่เพียงพอ (ขาดอีก ${(amount - sender.balance).toLocaleString()} บาท)`, ephemeral: true });

@@ -9,16 +9,24 @@ function setupDailyUpdate(client) {
   // ทำงานทุกวันเวลา 19:47 ตามเวลาประเทศไทย
   cron.schedule('00 08 * * *', async () => {
     try {
-      const users     = loadUsers();
-      const resources = loadResources();
-      const cfg       = loadConfig();
-      const chId      = cfg.announcementChannelId;
+      const initialCfg = loadConfig();
+      const chId      = initialCfg.announcementChannelId;
       const channel   = chId ? await client.channels.fetch(chId) : null;
 
       if (!channel || !channel.isTextBased()) {
         console.warn('⚠️ ไม่พบช่องประกาศ หรือช่องไม่รองรับข้อความ');
         return;
       }
+
+      // ดึงสมาชิกก่อนที่จะโหลดข้อมูล Economy เพื่อลดโอกาสเกิด Race Condition
+      const guild = channel.guild;
+      const members = await guild.members.fetch();
+      const citizenRoleName = 'THC | Thailand Citizen';
+
+      // โหลดข้อมูลล่าสุดตรงนี้
+      const users     = loadUsers();
+      const resources = loadResources();
+      const cfg       = loadConfig();
 
       // 1) Randomize Resources ±1–5
       for (const prov in resources) {
@@ -42,10 +50,7 @@ function setupDailyUpdate(client) {
       let totalDebt = 0;
       let richestUser = { id: null, balance: -1 };
       
-      // ดึงสมาชิกเพื่อเช็ค Role สัญชาติ
-      const guild = channel.guild;
-      const members = await guild.members.fetch();
-      const citizenRoleName = 'THC | Thailand Citizen';
+      // (Variables guild, members, and citizenRoleName are already defined above)
 
       for (const [id, u] of Object.entries(users)) {
         if (id === 'undefined') continue;
