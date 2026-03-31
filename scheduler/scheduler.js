@@ -73,22 +73,23 @@ const taxJob = new CronJob('0 0 1 * *', async () => {
     const totalWealth = (user.balance || 0) + (user.bank || 0);
 
     // คำนวณภาษีโดยใช้ฟังก์ชันส่วนกลาง
-    const { tax } = calculateTax(totalWealth);
+      const calculated = calculateTax(totalWealth);
+      let taxAmt = calculated.tax;
 
-    if (tax > 0) {
-      tax = Math.floor(tax);
-      // หักเงิน (หักจากเงินสดก่อน ถ้าไม่พอค่อยหักจากธนาคาร)
-      if (user.balance >= tax) {
-        user.balance -= tax;
-      } else {
-        const remainingTax = tax - user.balance;
-        user.balance = 0;
-        user.bank = Math.max(0, user.bank - remainingTax);
-      }
+      if (taxAmt > 0) {
+        taxAmt = Math.floor(taxAmt);
+        // หักเงิน (หักจากเงินสดก่อน ถ้าไม่พอค่อยหักจากธนาคาร)
+        if (user.balance >= taxAmt) {
+          user.balance -= taxAmt;
+        } else {
+          const remainingTax = taxAmt - user.balance;
+          user.balance = 0;
+          user.bank = Math.max(0, user.bank - remainingTax);
+        }
 
-      totalTaxCollected += tax;
-      taxpayersCount++;
-      detailLog += `• <@${userId}>: -${tax.toLocaleString()} บาท (เหลือคงเหลือ: ${(user.balance + user.bank).toLocaleString()} บาท)\n`;
+        totalTaxCollected += taxAmt;
+        taxpayersCount++;
+        detailLog += `• <@${userId}>: -${taxAmt.toLocaleString()} บาท (เหลือคงเหลือ: ${(user.balance + user.bank).toLocaleString()} บาท)\n`;
 
       // ส่ง DM แจ้งเตือนผู้เล่น
       try {
@@ -158,17 +159,25 @@ const allowanceJob = new CronJob('0 0 * * * *', async () => {
   const guild = clientRef.guilds.cache.first();
   if (!guild) return;
 
+  // ตรวจสอบสมาชิกในห้อง Voice ก่อนที่จะโหลดข้อมูลผู้ใช้ เพื่อลดระยะเวลาที่ข้อมูลจะค้างใน Memory (Race Condition)
+  const recipients = [];
+  guild.channels.cache.filter(c => c.type === ChannelType.GuildVoice).forEach(voiceChannel => {
+    voiceChannel.members.filter(m => !m.user.bot && !m.voice.selfDeaf).forEach(member => {
+      recipients.push(member.id);
+    });
+  });
+
+  if (recipients.length === 0) return;
+
   const users = loadUsers();
   let paidCount = 0;
   const reward = 50; // 50 บาท ต่อชั่วโมง
 
-  guild.channels.cache.filter(c => c.type === ChannelType.GuildVoice).forEach(voiceChannel => {
-    voiceChannel.members.filter(m => !m.user.bot && !m.voice.selfDeaf).forEach(member => {
-      if (users[member.id]) {
-        users[member.id].balance += reward;
-        paidCount++;
-      }
-    });
+  recipients.forEach(id => {
+    if (users[id]) {
+      users[id].balance = (users[id].balance || 0) + reward;
+      paidCount++;
+    }
   });
 
   if (paidCount > 0) {
