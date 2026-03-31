@@ -188,12 +188,67 @@ const allowanceJob = new CronJob('0 0 * * * *', async () => {
   }
 }, null, true, 'Asia/Bangkok');
 
+const scheduleMessageJob = new CronJob('* * * * *', async () => {
+  const fileP = path.join(__dirname, '..', 'data', 'scheduled_messages.json');
+  if (!fs.existsSync(fileP)) return;
+
+  let schedules;
+  try {
+    schedules = JSON.parse(fs.readFileSync(fileP, 'utf8'));
+  } catch(e) {
+    return;
+  }
+
+  if (!Array.isArray(schedules) || schedules.length === 0) return;
+
+  const now = Date.now();
+  const remainingSchedules = [];
+  let changed = false;
+
+  for (const schedule of schedules) {
+    if (now >= schedule.executeAt) {
+      changed = true;
+      try {
+        const guild = clientRef.guilds.cache.get(schedule.guildId);
+        if (!guild) continue;
+
+        const channel = guild.channels.cache.get(schedule.channelId) || await guild.channels.fetch(schedule.channelId).catch(()=>null);
+        if (!channel || !channel.isTextBased()) continue;
+
+        let finalMessage = schedule.message;
+        if (schedule.roleId) {
+          finalMessage = `<@&${schedule.roleId}>\n${finalMessage}`;
+        }
+
+        const options = { content: finalMessage };
+        
+        if (schedule.imageUrl) {
+          const embed = new EmbedBuilder().setImage(schedule.imageUrl).setColor('#00AAFF');
+          options.embeds = [embed];
+        }
+
+        await channel.send(options);
+        console.log(`✅ [Auto-Announce] ส่งประกาศอัตโนมัติสำเร็จในห้อง #${channel.name}`);
+      } catch (err) {
+        console.error('❌ [Auto-Announce] ผิดพลาดในการส่งประกาศอัตโนมัติ:', err);
+      }
+    } else {
+      remainingSchedules.push(schedule);
+    }
+  }
+
+  if (changed) {
+    fs.writeFileSync(fileP, JSON.stringify(remainingSchedules, null, 2), 'utf8');
+  }
+}, null, true, 'Asia/Bangkok');
+
 const scheduleAll = (client) => {
   clientRef = client;
   taxJob.start();
   salaryJob.start();
   loanInterestJob.start();
   allowanceJob.start();
+  scheduleMessageJob.start();
 };
 
 module.exports = { scheduleAll };
