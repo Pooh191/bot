@@ -103,7 +103,7 @@ module.exports = {
 
     const messageInput = new TextInputBuilder()
       .setCustomId('announce_message')
-      .setLabel('พิมพ์ข้อความ (สามารถขึ้นบรรทัดใหม่/พิมพ์ยาวได้)')
+      .setLabel('พิมพ์ข้อความ (เคาะบรรทัด/พิมพ์ยาวๆได้)')
       .setStyle(TextInputStyle.Paragraph)
       .setRequired(true)
       .setMaxLength(3500);
