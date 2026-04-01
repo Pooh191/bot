@@ -16,10 +16,11 @@ module.exports = {
     await interaction.deferReply();
     const { loadConfig, saveUsers } = require('../utils/economyUtils');
     const cfg = loadConfig();
-    let users = loadUsers();
-    
-    // ดึงสมาชิกทุกคนจากเซิร์ฟเวอร์เพื่อให้ข้อมูลอัปเดตที่สุด
+    // ดึงสมาชิกทุกคนจากเซิร์ฟเวอร์เพื่อให้ข้อมูลอัปเดตที่สุด (ช้า)
     const members = await interaction.guild.members.fetch();
+    
+    // โหลดไฟล์ผู้ใช้หลังจากโหลดสมาชิกเสร็จ ป้องกันเซฟข้อมูลย้อนเวลากลับมาทับ
+    let users = loadUsers();
     let hasNewUsers = false;
 
     // ตรวจสอบทุกคนในเซิร์ฟเวอร์ ถ้าใครยังไม่มีชื่อใน Database ให้เพิ่มทันที

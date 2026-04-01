@@ -16,12 +16,14 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
     const amount = interaction.options.getInteger('amount');
-    const users = loadUsers();
-    let count = 0;
-
-    // ดึงสมาชิกเพื่อเช็คยศสัญชาติ
+    
+    // ดึงสมาชิกเพื่อเช็คยศสัญชาติแบบช้าๆ
     const members = await interaction.guild.members.fetch();
     const citizenRoleName = 'THC | Thailand Citizen';
+
+    // โหลดไฟล์ผู้ใช้แบบ Synchronous เพิ่งโหลดเสร็จก็เปลี่ยนแปลง+เซฟเลย ป้องกันหลุด
+    const users = loadUsers();
+    let count = 0;
 
     for (const id in users) {
       if (id !== 'undefined' && users[id] && typeof users[id] === 'object') {
