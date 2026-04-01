@@ -65,6 +65,7 @@ const taxJob = new CronJob('0 0 1 * *', async () => {
   let totalTaxCollected = 0;
   let detailLog = "";
   let taxpayersCount = 0;
+  const dmPromises = [];
 
   for (let userId in users) {
     if (userId === 'undefined') continue;
@@ -91,7 +92,7 @@ const taxJob = new CronJob('0 0 1 * *', async () => {
         taxpayersCount++;
         detailLog += `• <@${userId}>: -${taxAmt.toLocaleString()} บาท (เหลือคงเหลือ: ${(user.balance + user.bank).toLocaleString()} บาท)\n`;
 
-      // ส่ง DM แจ้งเตือนผู้เล่น
+      // เตรียม DM แจ้งเตือนผู้เล่น แต่ยังไม่ส่งจนกว่าจะเซฟไฟล์เสร็จ
       try {
         const member = guild.members.cache.get(userId);
         if (member) {
@@ -100,12 +101,13 @@ const taxJob = new CronJob('0 0 1 * *', async () => {
             .setTitle('💸 ประกาศแจ้งการชำระภาษีประจำเดือน')
             .setDescription(`กรมสรรพากร THAILAND ได้ทำการหักภาษีจากบัญชีของคุณเรียบร้อยแล้ว`)
             .addFields(
-              { name: '📉 ภาษีที่ชำระ:', value: `**${tax.toLocaleString()}** บาท`, inline: true },
+              { name: '📉 ภาษีที่ชำระ:', value: `**${taxAmt.toLocaleString()}** บาท`, inline: true },
               { name: '💰 ยอดเงินคงเหลือรวม:', value: `**${(user.balance + user.bank).toLocaleString()}** บาท`, inline: true }
             )
             .setFooter({ text: 'ขอบคุณที่ร่วมเสียภาษีเพื่อพัฒนาประเทศ' })
             .setTimestamp();
-          await member.send({ embeds: [personalTaxEmbed] }).catch(() => null);
+          // นำคำขอติดคิวไว้ก่อน ไม่ await ทันที เพื่อป้องกัน Race Condition จากการโหลด/เซฟไฟล์
+          dmPromises.push(member.send({ embeds: [personalTaxEmbed] }).catch(() => null));
         }
       } catch (err) {
         // เงียบไว้ถ้าส่ง DM ไม่ได้
@@ -113,7 +115,13 @@ const taxJob = new CronJob('0 0 1 * *', async () => {
     }
   }
 
+  // เซฟข้อมูลเงินลงไฟล์ทันที ป้องกันผู้ใช้ทำงานคำสั่งอื่นแทรกแซงและเกิดเงินหาย
   saveUsers(users);
+
+  // หลังจากเซฟไฟล์เสร็จแล้ว ค่อยส่ง DM ทีเดียวแบบทำงานขนาน
+  if (dmPromises.length > 0) {
+    await Promise.all(dmPromises);
+  }
 
   const { sendEconomyLog } = require('../utils/logger');
 
