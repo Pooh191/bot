@@ -13,3 +13,12 @@ brain/
 .agent/
 _agents/
 _agent/
+
+# Database / Player State Files
+data/users.json
+data/history_logs.json
+data/uid_roles.json
+data/resources.json
+data/role_salaries.json
+data/scheduled_messages.json
+data/counter.json
