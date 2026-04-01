@@ -276,35 +276,46 @@ module.exports = {
         const categoryId = config.categoryId;
         const adminRoleId = config.adminRoleId;
 
+        // ตรวจสอบว่า Category ยังมีอยู่จริงหรือไม่
+        const category = interaction.guild.channels.cache.get(categoryId);
+        if (!category) {
+          return interaction.reply({ content: '❌ ไม่พบหมวดหมู่ (Category) ที่ตั้งค่าไว้ (อาจถูกลบไปแล้ว) กรุณาให้แอดมินใช้คำสั่ง /setupticket ใหม่อีกครั้ง', ephemeral: true });
+        }
+
         // ตรวจสอบห้องเดิมที่มีอยู่แล้ว
         const ticketChannelName = `ticket-${interaction.user.username.toLowerCase()}`.replace(/[^a-z0-9-]/g, '');
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName && c.parentId === categoryId);
         
         if (existingChannel) {
-          return interaction.reply({ content: `❌ คุณเปิดทิคเก็ตไว้แล้วที่ห้อง <#${existingChannel.id}>`, flags: [MessageFlags.Ephemeral] });
+          return interaction.reply({ content: `❌ คุณเปิดทิคเก็ตไว้แล้วที่ห้อง <#${existingChannel.id}>`, ephemeral: true });
         }
 
-        // สร้างห้องทิคเก็ตใหม่
+        // สร้างห้องทิคเก็ตใหม่โดยใช้โครงสร้างที่รัดกุมที่สุด
         try {
           const newChannel = await interaction.guild.channels.create({
             name: ticketChannelName,
             type: ChannelType.GuildText,
-            parent: categoryId,
-            permissionOverwrites: [
-              {
-                id: interaction.guild.id, // @everyone
-                deny: [PermissionFlagsBits.ViewChannel],
-              },
-              {
-                id: interaction.user.id,
-                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
-              },
-              {
-                id: adminRoleId,
-                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
-              }
-            ],
+            parent: category.id,
           });
+
+          // ทยอยอัปเดตสิทธิ์ทีละขั้น (เพื่อป้องกันบัคจาก API Array ที่ยาวเกินตอนสร้าง)
+          await newChannel.permissionOverwrites.edit(interaction.guild.id, {
+            ViewChannel: false
+          }).catch(() => null);
+
+          // สิทธิ์ผู้ส่ง
+          await newChannel.permissionOverwrites.edit(interaction.user.id, {
+            ViewChannel: true,
+            SendMessages: true,
+            ReadMessageHistory: true
+          }).catch(() => null);
+
+          // สิทธิ์แอดมิน
+          await newChannel.permissionOverwrites.edit(adminRoleId, {
+            ViewChannel: true,
+            SendMessages: true,
+            ReadMessageHistory: true
+          }).catch(() => null);
 
           const embed = new EmbedBuilder()
             .setTitle('🎫 ศูนย์ช่วยเหลือ (Support Ticket)')
