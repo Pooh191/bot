@@ -33,8 +33,8 @@ async function connectAndSyncAll() {
     await mongoose.connect(connUrl);
     console.log("✅ ว้าวุ่น! เชื่อมต่อ MongoDB ผ่านฉลุยแล้ว!");
 
-    // ดึงข้อมูลทั้งหมดจาก MongoDB มาลงใน Cache RAM ก่อนที่บอทจะเริ่มทำงานจริง
-    const docs = await JSONFileModel.find({});
+    // ดึงข้อมูลทั้งหมดจาก MongoDB มาลงใน Cache RAM แบบเพียวร้อยเปอร์เซ็นต์ (ไม่เอา object wrapper ของ Mongoose)
+    const docs = await JSONFileModel.find({}).lean();
     let dbHasData = false;
 
     for (const doc of docs) {
