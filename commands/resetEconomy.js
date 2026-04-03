@@ -5,22 +5,9 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('reseteconomy')
     .setDescription('รีเซ็ตระบบเศรษฐกิจทั้งหมด (Admin เท่านั้น)')
-    .addStringOption(option => 
-      option.setName('confirm')
-        .setDescription('พิมพ์ "RESET_ALL_DATA" เพื่อยืนยันการลบข้อมูลทั้งหมด')
-        .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
     try {
-      const confirmCode = interaction.options.getString('confirm');
-      
-      if (confirmCode !== 'RESET_ALL_DATA') {
-        return interaction.reply({ 
-          content: '❌ รหัสยืนยันไม่ถูกต้อง! เงินยังอยู่ครบ (กรุณาพิมพ์ `RESET_ALL_DATA` ให้ถูกต้องถ้าต้องการลบจริง ๆ)', 
-          ephemeral: true 
-        });
-      }
-
       const users = loadUsers();
       // ... rest of the logic remains same but safer ...
       if (typeof users !== 'object' || users === null) {
