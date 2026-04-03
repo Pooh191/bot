@@ -30,7 +30,7 @@ const memoryCache = {
 
 async function connectAndSyncAll() {
   // 1. โหลดข้อมูลจากไฟล์ Local เข้า RAM ก่อนเสมอ เพื่อเป็นก๊อกสอง (Offline Fallback)
-  console.log("💾 กำลังโหลดข้อมูลสำรองจากไฟล์ในเครื่อง...");
+  console.log("💾 ระบบก๊อก 1: กำลังโหลดข้อมูลสำรองจากไฟล์ในเครื่อง...");
   const filesToLoad = [
     { name: 'users', type: 'object', path: 'data/users.json' },
     { name: 'history_logs', type: 'array', path: 'data/history_logs.json' },
@@ -51,80 +51,73 @@ async function connectAndSyncAll() {
     const fullPath = path.join(__dirname, '..', entry.path);
     if (fs.existsSync(fullPath)) {
       try {
-        const fileData = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
-        memoryCache[entry.name] = fileData;
+        const fileContent = fs.readFileSync(fullPath, 'utf8');
+        if (fileContent && fileContent.trim() !== '') {
+          memoryCache[entry.name] = JSON.parse(fileContent);
+        } else {
+          memoryCache[entry.name] = entry.type === 'array' ? [] : {};
+        }
       } catch (e) {
         console.error(`❌ ไม่สามารถอ่านไฟล์ ${entry.path} ได้:`, e);
+        memoryCache[entry.name] = entry.type === 'array' ? [] : {};
       }
     } else {
-        // ถ้าไฟล์ไม่มีจริงๆ ให้ตั้งค่าเริ่มต้นเป็นของว่าง
-        memoryCache[entry.name] = entry.type === 'array' ? [] : {};
+      memoryCache[entry.name] = entry.type === 'array' ? [] : {};
     }
   }
 
+  // 2. พยายามเชื่อมต่อ MongoDB (ระบบออนไลน์)
   if (!process.env.MONGO_URI) {
-    console.warn("⚠️ ไม่พบ MONGO_URI ทำงานในโหมด OFFLINE (ใช้ไฟล์ในเครื่อง)");
+    console.warn("⚠️ ไม่พบ MONGO_URI บอทจะทำงานในโหมด OFFLINE เท่านั้น (ระวัง! ข้อมูลใน Render อาจหายได้)");
     return;
   }
 
   try {
-    console.log("⏳ กำลังเชื่อมต่อเข้าตู้เซฟคลาวด์ MongoDB...");
+    console.log("⏳ ระบบก๊อก 2: กำลังเชื่อมต่อเข้าตู้เซฟคลาวด์ MongoDB...");
     const connUrl = process.env.MONGO_URI.replace('<password>', process.env.MONGO_PASS || '');
     await mongoose.connect(connUrl);
-    console.log("✅ ว้าวุ่น! เชื่อมต่อ MongoDB ผ่านฉลุยแล้ว!");
+    console.log("✅ เชื่อมต่อ MongoDB สำเร็จ! บอทกำลังออนไลน์และซิงค์ข้อมูล...");
 
-    // ดึงข้อมูลทั้งหมดจาก MongoDB มาลงใน Cache RAM แบบเพียวร้อยเปอร์เซ็นต์ (ไม่เอา object wrapper ของ Mongoose)
-    const docs = await JSONFileModel.find({}).lean();
-    let dbHasData = false;
-
-    for (const doc of docs) {
-      if (doc._id === 'history_logs' || doc._id === 'scheduled_messages') {
-        memoryCache[doc._id] = doc.arrayData || [];
+    for (const entry of filesToLoad) {
+      const doc = await JSONFileModel.findById(entry.name).lean();
+      
+      if (doc) {
+        // มีข้อมูลบน Cloud: ให้โหลดทับ RAM (Cloud มาก่อน)
+        if (entry.type === 'array') {
+          memoryCache[entry.name] = doc.arrayData || [];
+        } else {
+          memoryCache[entry.name] = doc.data || {};
+        }
+        console.log(`🌐 [Online] โหลดไฟล์ "${entry.name}" จาก Cloud เรียบร้อย`);
       } else {
-        memoryCache[doc._id] = doc.data || {};
-      }
-      dbHasData = true;
-    }
-
-    // 🔥 ระบบย้ายบ้านอัตโนมัติ (Migration): ถ้าเปิดบอทครั้งแรกและ MongoDB ว่างเปล่า ให้เอาไฟล์ .json ดั้งเดิมโยนเข้าไปโลด!
-    if (!dbHasData) {
-      console.log("🔄 เปิดตู้เซฟใหม่เอี่ยม... กำลังกวาดเงินจากไฟล์ json ทั้งหมดในคอมย้ายเข้าคลาวด์!");
-      const filesToUpload = [
-        { name: 'users', type: 'object', path: 'data/users.json' },
-        { name: 'history_logs', type: 'array', path: 'data/history_logs.json' },
-        { name: 'config', type: 'object', path: 'config.json' },
-        { name: 'resources', type: 'object', path: 'data/resources.json' },
-        { name: 'role_salaries', type: 'object', path: 'data/role_salaries.json' },
-        { name: 'scheduled_messages', type: 'array', path: 'data/scheduled_messages.json' },
-        { name: 'uid_roles', type: 'object', path: 'data/uid_roles.json' },
-        { name: 'counter', type: 'object', path: 'data/counter.json' },
-        { name: 'shop', type: 'object', path: 'data/shop.json' },
-        { name: 'market', type: 'object', path: 'data/market.json' },
-        { name: 'ticket_config', type: 'object', path: 'data/ticket_config.json' },
-        { name: 'request_config', type: 'object', path: 'data/request_config.json' },
-        { name: 'citizenship_config', type: 'object', path: 'data/citizenship_config.json' }
-      ];
-
-      for (const entry of filesToUpload) {
-        const fullPath = path.join(__dirname, '..', entry.path);
-        if (fs.existsSync(fullPath)) {
-          console.log(`📡 ย้ายไฟล์ ${entry.name}.json...`);
-          const fileData = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
-          memoryCache[entry.name] = fileData;
+        // ไม่มีข้อมูลบน Cloud: ตรวจสอบว่า Local มีอะไรไหม
+        const localData = memoryCache[entry.name];
+        const isEmpty = entry.type === 'array' ? localData.length === 0 : Object.keys(localData).length === 0;
+        
+        if (!isEmpty) {
+          // มีข้อมูลในเครื่องแต่ใน Cloud ว่าง: อัปโหลดขึ้น Cloud (Migration)
+          console.log(`📡 [Migrate] พบข้อมูล "${entry.name}" ในเครื่องแต่ใน Cloud ว่าง... กำลังอัปโหลด!`);
           if (entry.type === 'array') {
-            await JSONFileModel.create({ _id: entry.name, arrayData: fileData });
+            await JSONFileModel.create({ _id: entry.name, arrayData: localData });
           } else {
-            await JSONFileModel.create({ _id: entry.name, data: fileData });
+            await JSONFileModel.create({ _id: entry.name, data: localData });
+          }
+          console.log(`✅ [Migrate] ข้อมูล "${entry.name}" ถูกสำรองขึ้น Cloud แล้ว!`);
+        } else {
+          // ทั้งคู่ว่างเปล่า: สร้าง Template เปล่าไว้ใน Cloud
+          console.log(`🆕 [New] ไฟล์ "${entry.name}" ยังไม่มีข้อมูลทั้งในเครื่องและ Cloud`);
+          if (entry.type === 'array') {
+            await JSONFileModel.create({ _id: entry.name, arrayData: [] });
+          } else {
+            await JSONFileModel.create({ _id: entry.name, data: {} });
           }
         }
       }
-      console.log("✅ ย้ายสำมะโนครัวเศรษฐกิจไทยเสร็จสิ้น 100%!");
-    } else {
-        console.log("✅ โหลดข้อมูลจากคลาวด์ลง RAM เสร็จแล้ว! ตัวบอทมีแต่รวยขึ้น ไม่มีรีเซ็ตแน่นอน!");
     }
+    console.log("🎉 ทุกอย่างพร้อมแล้ว! ข้อมูลออนไลน์ 100% บอทมีแต่รวยไม่มีรีเซ็ตแน่นอน!");
 
   } catch (err) {
-    console.error("❌ การเชื่อมต่อ MongoDB ล้มเหลว โปรดเช็กพาสเวิร์ดใน .env", err);
+    console.error("❌ การเชื่อมต่อ MongoDB ล้มเหลว โปรดเช็กพาสเวิร์ดใน .env หรือ Firewall", err);
   }
 }
 
