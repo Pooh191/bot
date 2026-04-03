@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const { getCache, setCacheAndSave } = require('../utils/mongoManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -65,19 +66,8 @@ module.exports = {
         [rolesToAdd[i], rolesToAdd[j]] = [rolesToAdd[j], rolesToAdd[i]];
       }
 
-      const UID_ROLE_FILE = path.join(__dirname, '..', 'data', 'uid_roles.json');
-      const COUNTER_FILE = path.join(__dirname, '..', 'data', 'counter.json');
-      
-      let uidRoles = {};
-      if (fs.existsSync(UID_ROLE_FILE)) {
-        const fileData = fs.readFileSync(UID_ROLE_FILE, 'utf8');
-        uidRoles = fileData ? JSON.parse(fileData) : {};
-      }
-      let currentCounter = 0;
-      if (fs.existsSync(COUNTER_FILE)) {
-        const fileData = fs.readFileSync(COUNTER_FILE, 'utf8');
-        currentCounter = fileData ? (JSON.parse(fileData).count || 0) : 0;
-      }
+      let uidRoles = getCache('uid_roles') || {};
+      let currentCounter = getCache('counter')?.count || 0;
 
       let assignedCount = 0;
       for (let i = 0; i < citizensToAssign.length; i++) {
@@ -91,8 +81,8 @@ module.exports = {
           currentCounter++;
       }
 
-      fs.writeFileSync(UID_ROLE_FILE, JSON.stringify(uidRoles, null, 2), 'utf8');
-      fs.writeFileSync(COUNTER_FILE, JSON.stringify({ count: currentCounter }), 'utf8');
+      setCacheAndSave('uid_roles', uidRoles);
+      setCacheAndSave('counter', { count: currentCounter });
 
       await interaction.editReply(`✅ **สุ่มแจกจังหวัดสำเร็จเรียบร้อย!**\n- ดึงประชาชนที่รอรับจังหวัดมาจำนวน ${assignedCount} คน\n- สุ่มกระจาย 12 จังหวัดให้ครบทุกภูมิภาคอัตโนมัติเรียบร้อย!\n- ตรวจเช็คประวัติลง Database สำเร็จ`);
 

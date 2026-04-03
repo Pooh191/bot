@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const { getCache, setCacheAndSave } = require('../utils/mongoManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -45,11 +46,8 @@ module.exports = {
       }
     }
 
-    const UID_ROLE_FILE = path.join(__dirname, '..', 'data', 'uid_roles.json');
-    const COUNTER_FILE = path.join(__dirname, '..', 'data', 'counter.json');
-    
-    fs.writeFileSync(UID_ROLE_FILE, JSON.stringify({}, null, 2), 'utf8');
-    fs.writeFileSync(COUNTER_FILE, JSON.stringify({ count: 0 }), 'utf8');
+    setCacheAndSave('uid_roles', {});
+    setCacheAndSave('counter', { count: 0 });
 
     await interaction.editReply('✅ ล้างยศจังหวัดเก่าและใหม่ทั้งหมดเรียบร้อยแล้ว พร้อมสำหรับสุ่มใหม่!');
 

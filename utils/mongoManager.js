@@ -18,7 +18,14 @@ const memoryCache = {
   resources: null,
   history_logs: null,
   role_salaries: null,
-  scheduled_messages: null
+  scheduled_messages: null,
+  uid_roles: null,
+  counter: null,
+  shop: null,
+  market: null,
+  ticket_config: null,
+  request_config: null,
+  citizenship_config: null
 };
 
 async function connectAndSyncAll() {
@@ -30,7 +37,14 @@ async function connectAndSyncAll() {
     { name: 'config', type: 'object', path: 'config.json' },
     { name: 'resources', type: 'object', path: 'data/resources.json' },
     { name: 'role_salaries', type: 'object', path: 'data/role_salaries.json' },
-    { name: 'scheduled_messages', type: 'array', path: 'data/scheduled_messages.json' }
+    { name: 'scheduled_messages', type: 'array', path: 'data/scheduled_messages.json' },
+    { name: 'uid_roles', type: 'object', path: 'data/uid_roles.json' },
+    { name: 'counter', type: 'object', path: 'data/counter.json' },
+    { name: 'shop', type: 'object', path: 'data/shop.json' },
+    { name: 'market', type: 'object', path: 'data/market.json' },
+    { name: 'ticket_config', type: 'object', path: 'data/ticket_config.json' },
+    { name: 'request_config', type: 'object', path: 'data/request_config.json' },
+    { name: 'citizenship_config', type: 'object', path: 'data/citizenship_config.json' }
   ];
 
   for (const entry of filesToLoad) {
@@ -81,7 +95,14 @@ async function connectAndSyncAll() {
         { name: 'config', type: 'object', path: 'config.json' },
         { name: 'resources', type: 'object', path: 'data/resources.json' },
         { name: 'role_salaries', type: 'object', path: 'data/role_salaries.json' },
-        { name: 'scheduled_messages', type: 'array', path: 'data/scheduled_messages.json' }
+        { name: 'scheduled_messages', type: 'array', path: 'data/scheduled_messages.json' },
+        { name: 'uid_roles', type: 'object', path: 'data/uid_roles.json' },
+        { name: 'counter', type: 'object', path: 'data/counter.json' },
+        { name: 'shop', type: 'object', path: 'data/shop.json' },
+        { name: 'market', type: 'object', path: 'data/market.json' },
+        { name: 'ticket_config', type: 'object', path: 'data/ticket_config.json' },
+        { name: 'request_config', type: 'object', path: 'data/request_config.json' },
+        { name: 'citizenship_config', type: 'object', path: 'data/citizenship_config.json' }
       ];
 
       for (const entry of filesToUpload) {

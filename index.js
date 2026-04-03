@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, ChannelType, Partials, ActivityType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const { connectAndSyncAll } = require('./utils/mongoManager');
+const { connectAndSyncAll, getCache, setCacheAndSave } = require('./utils/mongoManager');
 const { setupDailyUpdate } = require('./scheduler/dailyUpdate');
 const { loadUsers, saveUsers, getUser, loadResources, saveResources, loadConfig, saveConfig, addXP } = require('./utils/economyUtils');
 const { scheduleAll } = require('./scheduler/scheduler');
@@ -66,27 +66,21 @@ async function getNextVoiceChannelName(guild) {
 
 // Counter helpers
 function getCounter() {
-  if (!fs.existsSync(COUNTER_FILE)) {
-    fs.writeFileSync(COUNTER_FILE, JSON.stringify({ count: 0 }));
-    return 0;
-  }
-  try {
-    return JSON.parse(fs.readFileSync(COUNTER_FILE, 'utf8')).count || 0;
-  } catch {
-    fs.writeFileSync(COUNTER_FILE, JSON.stringify({ count: 0 }));
-    return 0;
-  }
+  const data = getCache('counter');
+  return data?.count || 0;
 }
 
 function saveCounter(n) {
-  fs.writeFileSync(COUNTER_FILE, JSON.stringify({ count: n }));
+  setCacheAndSave('counter', { count: n });
 }
 
-// โหลด UID-role map
-let uidRoles = {};
-if (fs.existsSync(UID_ROLE_FILE)) {
-  try { uidRoles = JSON.parse(fs.readFileSync(UID_ROLE_FILE, 'utf8')); }
-  catch { uidRoles = {}; }
+// UID-role map helper
+function getUidRoles() {
+  return getCache('uid_roles') || {};
+}
+
+function saveUidRoles(data) {
+  setCacheAndSave('uid_roles', data);
 }
 
 // โหลดและลงทะเบียน Slash commands
@@ -212,9 +206,10 @@ client.on('guildMemberUpdate', async (oldM, newM) => {
   const has = newM.roles.cache.has(civRole.id);
 
   // ตรวจสอบว่าคือกิจกรรม "เพิ่งได้รับยศหลัก" หรือไม่
-  if (!had && has) {
+    if (!had && has) {
     console.log(`👤 ตรวจพบ ${newM.user.tag} ได้รับยศหลัก "${CIVILIAN_ROLE_NAME}" กำลังสุ่มจังหวัด...`);
     
+    const uidRoles = getUidRoles();
     let roleName = uidRoles[newM.id];
     if (!roleName) {
       console.log(`🎲 สมาชิกใหม่ (ยังไม่เคยมีจังหวัด) กำลังสุ่มจาก ${rolesInOrder.length} จังหวัด...`);
@@ -232,7 +227,7 @@ client.on('guildMemberUpdate', async (oldM, newM) => {
       roleName = candidates[randomIdx];
 
       uidRoles[newM.id] = roleName;
-      fs.writeFileSync(UID_ROLE_FILE, JSON.stringify(uidRoles, null, 2), 'utf8');
+      saveUidRoles(uidRoles);
       console.log(`📍 สุ่มได้จังหวัด: "${roleName}" (ประชากรเดิม: ${minCount})`);
       
       // อัปเดตตัวนับไว้เฉยๆ เผื่อระบบเก่ามีเรียกใช้ที่ไหน
