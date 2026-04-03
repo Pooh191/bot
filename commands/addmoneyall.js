@@ -17,22 +17,15 @@ module.exports = {
     await interaction.deferReply();
     const amount = interaction.options.getInteger('amount');
     
-    // ดึงสมาชิกเพื่อเช็คยศสัญชาติแบบช้าๆ
-    const members = await interaction.guild.members.fetch();
-    const citizenRoleName = 'THC | Thailand Citizen';
-
-    // โหลดไฟล์ผู้ใช้แบบ Synchronous เพิ่งโหลดเสร็จก็เปลี่ยนแปลง+เซฟเลย ป้องกันหลุด
+    // โหลดไฟล์ผู้ใช้จาก Cache (ดึงข้อมูลทั้งหมดในฐานข้อมูล)
     const users = loadUsers();
     let count = 0;
 
     for (const id in users) {
       if (id !== 'undefined' && users[id] && typeof users[id] === 'object') {
-        const member = members.get(id);
-        // เช็คว่าอยู่ในเซิร์ฟเวอร์ และมียศสัญชาติไทยหรือไม่
-        if (member && member.roles.cache.some(role => role.name === citizenRoleName)) {
-            users[id].balance = (users[id].balance || 0) + amount;
-            count++;
-        }
+        // แอดเงินให้ทุกคนที่อยู่ในฐานข้อมูล (ทั้งออนและไม่ออน)
+        users[id].balance = (users[id].balance || 0) + amount;
+        count++;
       }
     }
 
