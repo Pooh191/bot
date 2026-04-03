@@ -1,18 +1,15 @@
 const { EmbedBuilder, ChannelType } = require('discord.js');
 const { CronJob } = require('cron');
-const fs = require('fs');
-const path = require('path');
 const { loadUsers, saveUsers } = require('../utils/economyUtils');
-
-const salariesPath = path.join(__dirname, '..', 'data', 'role_salaries.json');
+const { getCache, setCacheAndSave } = require('../utils/mongoManager');
 let clientRef;
 
 // ระบบการโอนเงินเดือนอัตโนมัติ
 const salaryJob = new CronJob('0 0 18 * *', async () => {
   console.log('💵 Running automated salary distribution...');
 
-  if (!fs.existsSync(salariesPath)) return;
-  const roleSalaries = JSON.parse(fs.readFileSync(salariesPath, 'utf8'));
+  const roleSalaries = getCache('role_salaries') || [];
+  if (roleSalaries.length === 0) return;
   const guild = clientRef.guilds.cache.first();
   if (!guild) return console.error('❌ ไม่พบเซิร์ฟเวอร์ในการจ่ายเงินเดือน');
 
@@ -197,15 +194,7 @@ const allowanceJob = new CronJob('0 0 * * * *', async () => {
 }, null, true, 'Asia/Bangkok');
 
 const scheduleMessageJob = new CronJob('* * * * *', async () => {
-  const fileP = path.join(__dirname, '..', 'data', 'scheduled_messages.json');
-  if (!fs.existsSync(fileP)) return;
-
-  let schedules;
-  try {
-    schedules = JSON.parse(fs.readFileSync(fileP, 'utf8'));
-  } catch(e) {
-    return;
-  }
+  const schedules = getCache('scheduled_messages') || [];
 
   if (!Array.isArray(schedules) || schedules.length === 0) return;
 
@@ -253,7 +242,7 @@ const scheduleMessageJob = new CronJob('* * * * *', async () => {
   }
 
   if (changed) {
-    fs.writeFileSync(fileP, JSON.stringify(remainingSchedules, null, 2), 'utf8');
+    setCacheAndSave('scheduled_messages', remainingSchedules, true);
   }
 }, null, true, 'Asia/Bangkok');
 

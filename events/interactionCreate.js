@@ -16,6 +16,7 @@ const path = require('path');
 const { getUser, saveUsers, addXP } = require('../utils/economyUtils');
 const { sendEconomyLog } = require('../utils/logger');
 const moment = require('moment-timezone');
+const { getCache, setCacheAndSave } = require('../utils/mongoManager');
 
 module.exports = {
   name: 'interactionCreate',
@@ -117,14 +118,7 @@ module.exports = {
         let messageInput = interaction.fields.getTextInputValue('announce_message');
         messageInput = messageInput.replace(/\\n/g, '\n'); // รองรับการพิมพ์ \n ตรงๆ
         
-        const fileP = path.join(__dirname, '..', 'data', 'scheduled_messages.json');
-        let schedules = [];
-        if (fs.existsSync(fileP)) {
-          try {
-            schedules = JSON.parse(fs.readFileSync(fileP, 'utf8'));
-            if (!Array.isArray(schedules)) schedules = [];
-          } catch(e) { schedules = []; }
-        }
+        let schedules = getCache('scheduled_messages') || [];
 
         const newSchedule = {
           id: Date.now().toString(),
@@ -138,11 +132,7 @@ module.exports = {
         };
 
         schedules.push(newSchedule);
-        
-        const dir = path.dirname(fileP);
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        
-        fs.writeFileSync(fileP, JSON.stringify(schedules, null, 2), 'utf8');
+        setCacheAndSave('scheduled_messages', schedules, true);
 
         // Clean up
         global.tempAnnounceCache.delete(interaction.customId);
@@ -162,7 +152,7 @@ module.exports = {
 
         if (cachedData.imageUrl) replyEmbed.setImage(cachedData.imageUrl);
 
-        await interaction.reply({ embeds: [replyEmbed], ephemeral: true });
+        await interaction.reply({ embeds: [replyEmbed] });
         return;
       }
 

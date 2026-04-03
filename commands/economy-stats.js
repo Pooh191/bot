@@ -1,20 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
+const { loadUsers } = require('../utils/economyUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('economy-stats')
     .setDescription('แสดงสถิติเศรษฐกิจทั้งหมด'),
   async execute(interaction) {
-    // โหลดข้อมูลผู้ใช้จากไฟล์ JSON
-    let users = {};
-    const filePath = path.join(__dirname, '../data/users.json');
-
-    // ตรวจสอบว่าไฟล์ผู้ใช้มีอยู่หรือไม่
-    if (fs.existsSync(filePath)) {
-      users = JSON.parse(fs.readFileSync(filePath));
-    }
+    const users = loadUsers();
 
     // คำนวณยอดรวมของเงินสดและเงินในธนาคาร
     let totalCash = 0;

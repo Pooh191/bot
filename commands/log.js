@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
+const { getCache } = require('../utils/mongoManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -10,16 +9,7 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: false });
 
-    const logsFile = path.join(__dirname, '..', 'data', 'history_logs.json');
-    let logs = [];
-    if (fs.existsSync(logsFile)) {
-      try {
-        const fileData = fs.readFileSync(logsFile, 'utf8');
-        logs = fileData ? JSON.parse(fileData) : [];
-      } catch (e) {
-        logs = [];
-      }
-    }
+    let logs = getCache('history_logs') || [];
 
     if (logs.length === 0) {
       return interaction.editReply('📭 ยังไม่มีประวัติการบันทึกข้อมูลใดๆ ในระบบ');

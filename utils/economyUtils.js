@@ -1,23 +1,13 @@
-const fs = require('fs');
-const path = require('path');
 const moment = require('moment-timezone');
-
-// Path setup
-const usersFilePath  = path.join(__dirname, '..', 'data', 'users.json');
-const configFilePath = path.join(__dirname, '..', 'config.json');
-const resourcesFilePath = path.join(__dirname, '..', 'data', 'resources.json');
+const { getCache, setCacheAndSave } = require('./mongoManager');
 
 // —————— User functions ——————
 function loadUsers() {
-  if (!fs.existsSync(usersFilePath)) {
-    fs.mkdirSync(path.dirname(usersFilePath), { recursive: true });
-    fs.writeFileSync(usersFilePath, JSON.stringify({}, null, 2), 'utf8');
-  }
-  return JSON.parse(fs.readFileSync(usersFilePath, 'utf8'));
+  return getCache('users') || {};
 }
 
 function saveUsers(users) {
-  fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2), 'utf8');
+  setCacheAndSave('users', users);
 }
 
 function getUser(userId) {
@@ -72,27 +62,20 @@ function addXP(user, amount) {
 
 // —————— Config functions ——————
 function loadConfig() {
-  if (!fs.existsSync(configFilePath)) {
-    fs.writeFileSync(configFilePath, JSON.stringify({}, null, 2), 'utf8');
-  }
-  return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
+  return getCache('config') || {};
 }
 
 function saveConfig(config) {
-  fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2), 'utf8');
+  setCacheAndSave('config', config);
 }
 
 // —————— Resource functions ——————
 function loadResources() {
-  if (!fs.existsSync(resourcesFilePath)) {
-    fs.mkdirSync(path.dirname(resourcesFilePath), { recursive: true });
-    fs.writeFileSync(resourcesFilePath, JSON.stringify({}, null, 2), 'utf8');
-  }
-  return JSON.parse(fs.readFileSync(resourcesFilePath, 'utf8'));
+  return getCache('resources') || {};
 }
 
 function saveResources(resources) {
-  fs.writeFileSync(resourcesFilePath, JSON.stringify(resources, null, 2), 'utf8');
+  setCacheAndSave('resources', resources);
 }
 
 // —————— Tax functions (กรมสรรพากร) ——————

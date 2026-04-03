@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const salariesPath = path.join(__dirname, '..', 'data', 'role_salaries.json');
+const { getCache } = require('../utils/mongoManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -11,11 +8,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
-    if (!fs.existsSync(salariesPath)) {
-      return interaction.reply({ content: '💨 ยังไม่มีข้อมูลเงินเดือนในระบบครับ!', ephemeral: true });
-    }
-
-    const roleSalaries = JSON.parse(fs.readFileSync(salariesPath, 'utf8'));
+    const roleSalaries = getCache('role_salaries') || [];
 
     if (roleSalaries.length === 0) {
       return interaction.reply({ content: '💨 ยังไม่มีข้อมูลเงินเดือนในระบบครับ!', ephemeral: true });

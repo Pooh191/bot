@@ -1,9 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
 const { getUser, saveUsers, addXP } = require('../utils/economyUtils');
-
-const salariesPath = path.join(__dirname, '..', 'data', 'role_salaries.json');
+const { getCache } = require('../utils/mongoManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,11 +28,11 @@ module.exports = {
     }
 
     // Role Salary check
-    if (!fs.existsSync(salariesPath)) {
+    const roleSalaries = getCache('role_salaries') || [];
+    
+    if (roleSalaries.length === 0) {
       return interaction.reply({ content: '❌ ระบบยังไม่ได้ตั้งค่าเงินเดือนสำหรับแต่ละยศครับกรุณาแจ้งแอดมินนะครับ', ephemeral: true });
     }
-
-    const roleSalaries = JSON.parse(fs.readFileSync(salariesPath, 'utf8'));
     
     // Find the highest salary role the user has
     let bestSalary = 0;

@@ -1,20 +1,13 @@
 const { EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const LOGS_FILE = path.join(__dirname, '..', 'data', 'history_logs.json');
+const { getCache, setCacheAndSave } = require('./mongoManager');
 
 /**
  * ส่ง Log ไปยังห้องที่กำหนดใน Discord และบันทึกลงไฟล์
  */
 async function sendEconomyLog(client, title, description, color = 'Blue', isPublic = false) {
   try {
-    // 1. บันทึกลงไฟล์ JSON (เพื่อไว้เรียกดูด้วย /log)
-    let logs = [];
-    if (fs.existsSync(LOGS_FILE)) {
-      const fileData = fs.readFileSync(LOGS_FILE, 'utf8');
-      logs = fileData ? JSON.parse(fileData) : [];
-    }
+    // 1. บันทึกลง MongoDB (และ Cache)
+    let logs = getCache('history_logs') || [];
 
     const logEntry = {
       timestamp: Date.now(),
@@ -25,7 +18,7 @@ async function sendEconomyLog(client, title, description, color = 'Blue', isPubl
 
     logs.unshift(logEntry);
     if (logs.length > 500) logs.length = 500;
-    fs.writeFileSync(LOGS_FILE, JSON.stringify(logs, null, 2), 'utf8');
+    setCacheAndSave('history_logs', logs, true);
 
     // 2. ส่งไปยังห้อง Discord ประจำการ (Real-time)
     const displayDescription = description.length > 4000 

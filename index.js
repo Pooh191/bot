@@ -2,6 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, ChannelType, Partials, ActivityType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const { connectAndSyncAll } = require('./utils/mongoManager');
 const { setupDailyUpdate } = require('./scheduler/dailyUpdate');
 const { loadUsers, saveUsers, getUser, loadResources, saveResources, loadConfig, saveConfig, addXP } = require('./utils/economyUtils');
 const { scheduleAll } = require('./scheduler/scheduler');
@@ -101,10 +102,14 @@ for (const f of fs.readdirSync('./commands').filter(f => f.endsWith('.js'))) {
 const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 (async () => {
   try {
+    await connectAndSyncAll();
     await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
     console.log(`📡 Registered ${commands.length} slash commands`);
+
+    // Let the bot login ONLY after DB cache is ready
+    client.login(process.env.BOT_TOKEN);
   } catch (e) {
-    console.error('❌ Command registration failed', e);
+    console.error('❌ Initialization failed', e);
   }
 })();
 
@@ -261,8 +266,7 @@ client.on('guildMemberUpdate', async (oldM, newM) => {
 
 
 
-// Login
-client.login(process.env.BOT_TOKEN);
+// Login is handled above inside the initialization async function
 
 // Render Port Binding (Fix for "No open ports detected" error)
 const http = require('http');

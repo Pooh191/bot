@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const salariesPath = path.join(__dirname, '..', 'data', 'role_salaries.json');
+const { getCache, setCacheAndSave } = require('../utils/mongoManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,10 +19,7 @@ module.exports = {
     const role = interaction.options.getRole('role');
     const salary = interaction.options.getInteger('salary');
 
-    let roleSalaries = [];
-    if (fs.existsSync(salariesPath)) {
-      roleSalaries = JSON.parse(fs.readFileSync(salariesPath, 'utf8'));
-    }
+    let roleSalaries = getCache('role_salaries') || [];
 
     const index = roleSalaries.findIndex(rs => rs.roleId === role.id);
     if (index !== -1) {
@@ -42,7 +36,7 @@ module.exports = {
     // Sort by salary DESC (to ensure highest salary is picked first later)
     roleSalaries.sort((a, b) => b.salary - a.salary);
 
-    fs.writeFileSync(salariesPath, JSON.stringify(roleSalaries, null, 2));
+    setCacheAndSave('role_salaries', roleSalaries, true);
 
     await interaction.reply({ 
       content: `✅ ตั้งค่าเงินเดือนให้ยศ **${role.name}** เป็น **${salary.toLocaleString()} บาท** เรียบร้อยแล้วครับ!` 

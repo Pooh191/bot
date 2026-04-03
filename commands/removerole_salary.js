@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const salariesPath = path.join(__dirname, '..', 'data', 'role_salaries.json');
+const { getCache, setCacheAndSave } = require('../utils/mongoManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -17,11 +14,11 @@ module.exports = {
   async execute(interaction) {
     const role = interaction.options.getRole('role');
 
-    if (!fs.existsSync(salariesPath)) {
+    let roleSalaries = getCache('role_salaries') || [];
+    if (roleSalaries.length === 0) {
       return interaction.reply({ content: '❌ ยังไม่มีข้อมูลในระบบเงินเดือนครับ', ephemeral: true });
     }
 
-    let roleSalaries = JSON.parse(fs.readFileSync(salariesPath, 'utf8'));
     const index = roleSalaries.findIndex(rs => rs.roleId === role.id);
 
     if (index === -1) {
@@ -29,7 +26,7 @@ module.exports = {
     }
 
     roleSalaries.splice(index, 1);
-    fs.writeFileSync(salariesPath, JSON.stringify(roleSalaries, null, 2));
+    setCacheAndSave('role_salaries', roleSalaries, true);
 
     await interaction.reply({ content: `✅ ลบยศ **${role.name}** ออกจากระบบเรียบร้อยแล้ว!` });
   }

@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const configPath = path.join(__dirname, '..', 'config.json');
+const { loadConfig, saveConfig } = require('../utils/economyUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,12 +13,9 @@ module.exports = {
     ),
   async execute(interaction) {
     const amount = interaction.options.getInteger('amount');
-    let config = {};
-    if (fs.existsSync(configPath)) {
-      config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    }
+    let config = loadConfig();
     config.startingBalance = amount;
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+    saveConfig(config);
 
     await interaction.reply(`✅ ตั้งค่าเงินเริ่มต้นสำหรับประชาชนใหม่เป็น **${amount.toLocaleString()} บาท (THB)** เรียบร้อยแล้ว`);
 
