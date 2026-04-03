@@ -22,8 +22,34 @@ const memoryCache = {
 };
 
 async function connectAndSyncAll() {
+  // 1. โหลดข้อมูลจากไฟล์ Local เข้า RAM ก่อนเสมอ เพื่อเป็นก๊อกสอง (Offline Fallback)
+  console.log("💾 กำลังโหลดข้อมูลสำรองจากไฟล์ในเครื่อง...");
+  const filesToLoad = [
+    { name: 'users', type: 'object', path: 'data/users.json' },
+    { name: 'history_logs', type: 'array', path: 'data/history_logs.json' },
+    { name: 'config', type: 'object', path: 'config.json' },
+    { name: 'resources', type: 'object', path: 'data/resources.json' },
+    { name: 'role_salaries', type: 'object', path: 'data/role_salaries.json' },
+    { name: 'scheduled_messages', type: 'array', path: 'data/scheduled_messages.json' }
+  ];
+
+  for (const entry of filesToLoad) {
+    const fullPath = path.join(__dirname, '..', entry.path);
+    if (fs.existsSync(fullPath)) {
+      try {
+        const fileData = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+        memoryCache[entry.name] = fileData;
+      } catch (e) {
+        console.error(`❌ ไม่สามารถอ่านไฟล์ ${entry.path} ได้:`, e);
+      }
+    } else {
+        // ถ้าไฟล์ไม่มีจริงๆ ให้ตั้งค่าเริ่มต้นเป็นของว่าง
+        memoryCache[entry.name] = entry.type === 'array' ? [] : {};
+    }
+  }
+
   if (!process.env.MONGO_URI) {
-    console.warn("⚠️ ไม่พบ MONGO_URI ใช้ออฟไลน์โหมด");
+    console.warn("⚠️ ไม่พบ MONGO_URI ทำงานในโหมด OFFLINE (ใช้ไฟล์ในเครื่อง)");
     return;
   }
 

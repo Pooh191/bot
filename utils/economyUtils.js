@@ -62,7 +62,27 @@ function addXP(user, amount) {
 
 // —————— Config functions ——————
 function loadConfig() {
-  return getCache('config') || {};
+  const config = getCache('config') || {};
+  
+  // ป้องกันค่า NaN กรณีที่ Config ใน Database หรือไฟล์หาย/ไม่สมบูรณ์
+  const defaults = {
+    workMin: 200,
+    workMax: 500,
+    workCooldown: 300,
+    slutMin: 1000,
+    slutMax: 2500,
+    slutCooldown: 600000,
+    crimeMin: 500,
+    crimeMax: 1000,
+    crimeCooldown: 480000,
+    xpWork: 10,
+    xpCrime: 15,
+    xpSlut: 20,
+    startingBalance: 200,
+    dailyIncome: 0
+  };
+
+  return { ...defaults, ...config };
 }
 
 function saveConfig(config) {
