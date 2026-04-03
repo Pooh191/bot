@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const moment = require('moment-timezone');
@@ -40,7 +40,7 @@ module.exports = {
     const imageUrl = interaction.options.getString('image_url');
 
     if (!channel.isTextBased()) {
-      return interaction.reply({ content: '❌ ช่องที่เลือกต้องรองรับข้อความ', ephemeral: true });
+      return interaction.reply({ content: '❌ ช่องที่เลือกต้องรองรับข้อความ', flags: [MessageFlags.Ephemeral] });
     }
 
     let targetTime;
@@ -77,12 +77,12 @@ module.exports = {
     if (!targetTime || !targetTime.isValid()) {
       return interaction.reply({ 
         content: '❌ รูปแบบเวลาไม่ถูกต้อง!\nกรุณาระบุ `time` เช่น 18:30 และ `date` เช่น 01/04/2026\nหรือพิมพ์แค่ `time` เป็น 10m (ไม่ต้องใส่วันที่)', 
-        ephemeral: true 
+        flags: [MessageFlags.Ephemeral] 
       });
     }
 
     if (targetTime.valueOf() <= moment().valueOf()) {
-      return interaction.reply({ content: '❌ ไม่สามารถตั้งเวลาในอดีตได้', ephemeral: true });
+      return interaction.reply({ content: '❌ ไม่สามารถตั้งเวลาในอดีตได้', flags: [MessageFlags.Ephemeral] });
     }
 
     // Store options in global cache

@@ -1,7 +1,19 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, ChannelType, Partials, ActivityType } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, ChannelType, Partials, ActivityType, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
+
+// ✅ Render Port Binding (Fix for "No open ports detected" error)
+// เราต้องรีบจอง Port ให้ไวที่สุดเพื่อให้ Render รู้ว่าแอปทำงานอยู่
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Bot is running\n');
+}).listen(PORT, () => {
+  console.log(`🚀 Health check server is listening on port ${PORT}`);
+});
+
 const { connectAndSyncAll, getCache, setCacheAndSave } = require('./utils/mongoManager');
 const { setupDailyUpdate } = require('./scheduler/dailyUpdate');
 const { loadUsers, saveUsers, getUser, loadResources, saveResources, loadConfig, saveConfig, addXP } = require('./utils/economyUtils');
@@ -262,17 +274,6 @@ client.on('guildMemberUpdate', async (oldM, newM) => {
 
 
 // Login is handled above inside the initialization async function
-
-// Render Port Binding (Fix for "No open ports detected" error)
-const http = require('http');
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Bot is running\n');
-});
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server is listening on port ${PORT}`);
-});
 
 const { sendEconomyLog } = require('./utils/logger');
 

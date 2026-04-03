@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { getCache } = require('../utils/mongoManager');
 
 module.exports = {
@@ -10,7 +10,7 @@ module.exports = {
     const schedules = getCache('scheduled_messages') || [];
 
     if (schedules.length === 0) {
-      return interaction.reply({ content: '❌ ไม่พบรายการประกาศที่ตั้งเวลาไว้ในขณะนี้', ephemeral: true });
+      return interaction.reply({ content: '❌ ไม่พบรายการประกาศที่ตั้งเวลาไว้ในขณะนี้', flags: [MessageFlags.Ephemeral] });
     }
 
     const embed = new EmbedBuilder()
@@ -41,6 +41,6 @@ module.exports = {
       options.components = [row];
     }
 
-    await interaction.reply({ ...options, ephemeral: true });
+    await interaction.reply({ ...options, flags: [MessageFlags.Ephemeral] });
   }
 };

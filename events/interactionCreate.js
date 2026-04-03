@@ -112,7 +112,7 @@ module.exports = {
       if (interaction.isModalSubmit() && interaction.customId.startsWith('sa_modal_')) {
         const cachedData = global.tempAnnounceCache?.get(interaction.customId);
         if (!cachedData) {
-          return interaction.reply({ content: '❌ เซสชันหมดอายุหรือฟอร์มไม่ถูกต้อง กรุณาตั้งเวลาใหม่อีกครั้ง', ephemeral: true });
+          return interaction.reply({ content: '❌ เซสชันหมดอายุหรือฟอร์มไม่ถูกต้อง กรุณาตั้งเวลาใหม่อีกครั้ง', flags: [MessageFlags.Ephemeral] });
         }
         
         let messageInput = interaction.fields.getTextInputValue('announce_message');
@@ -163,13 +163,13 @@ module.exports = {
         
         const index = schedules.findIndex(s => s.id === scheduleId);
         if (index === -1) {
-          return interaction.reply({ content: '❌ ไม่พบรายการนี้ในระบบ หรืออาจถูกส่ง/ลบไปแล้ว', ephemeral: true });
+          return interaction.reply({ content: '❌ ไม่พบรายการนี้ในระบบ หรืออาจถูกส่ง/ลบไปแล้ว', flags: [MessageFlags.Ephemeral] });
         }
         
         schedules.splice(index, 1);
         setCacheAndSave('scheduled_messages', schedules, true);
         
-        await interaction.reply({ content: `✅ ยกเลิกรายการประกาศ (ID: \`${scheduleId}\`) สำเร็จแล้ว!`, ephemeral: true });
+        await interaction.reply({ content: `✅ ยกเลิกรายการประกาศ (ID: \`${scheduleId}\`) สำเร็จแล้ว!`, flags: [MessageFlags.Ephemeral] });
         return;
       }
 
@@ -286,7 +286,7 @@ module.exports = {
         // ตรวจสอบว่า Category ยังมีอยู่จริงหรือไม่
         const category = interaction.guild.channels.cache.get(categoryId);
         if (!category) {
-          return interaction.reply({ content: '❌ ไม่พบหมวดหมู่ (Category) ที่ตั้งค่าไว้ (อาจถูกลบไปแล้ว) กรุณาให้แอดมินใช้คำสั่ง /setupticket ใหม่อีกครั้ง', ephemeral: true });
+          return interaction.reply({ content: '❌ ไม่พบหมวดหมู่ (Category) ที่ตั้งค่าไว้ (อาจถูกลบไปแล้ว) กรุณาให้แอดมินใช้คำสั่ง /setupticket ใหม่อีกครั้ง', flags: [MessageFlags.Ephemeral] });
         }
 
         // ตรวจสอบห้องเดิมที่มีอยู่แล้ว
@@ -294,7 +294,7 @@ module.exports = {
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName && c.parentId === categoryId);
         
         if (existingChannel) {
-          return interaction.reply({ content: `❌ คุณเปิดทิคเก็ตไว้แล้วที่ห้อง <#${existingChannel.id}>`, ephemeral: true });
+          return interaction.reply({ content: `❌ คุณเปิดทิคเก็ตไว้แล้วที่ห้อง <#${existingChannel.id}>`, flags: [MessageFlags.Ephemeral] });
         }
 
         // สร้างห้องทิคเก็ตใหม่โดยใช้โครงสร้างที่รัดกุมที่สุด
@@ -425,7 +425,7 @@ module.exports = {
         } catch (e) {
           console.error(e);
           if (!interaction.replied) {
-            await interaction.reply({ content: '❌ การส่งฟอร์มล้มเหลว', ephemeral: true });
+            await interaction.reply({ content: '❌ การส่งฟอร์มล้มเหลว', flags: [MessageFlags.Ephemeral] });
           }
         }
       }
