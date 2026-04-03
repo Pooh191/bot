@@ -156,6 +156,23 @@ module.exports = {
         return;
       }
 
+      // ✅ จัดการปุ่มยกเลิกประกาศตั้งเวลา (Cancel Schedule)
+      if (interaction.isButton() && interaction.customId.startsWith('cancel_schedule_')) {
+        const scheduleId = interaction.customId.split('_')[2];
+        let schedules = getCache('scheduled_messages') || [];
+        
+        const index = schedules.findIndex(s => s.id === scheduleId);
+        if (index === -1) {
+          return interaction.reply({ content: '❌ ไม่พบรายการนี้ในระบบ หรืออาจถูกส่ง/ลบไปแล้ว', ephemeral: true });
+        }
+        
+        schedules.splice(index, 1);
+        setCacheAndSave('scheduled_messages', schedules, true);
+        
+        await interaction.reply({ content: `✅ ยกเลิกรายการประกาศ (ID: \`${scheduleId}\`) สำเร็จแล้ว!`, ephemeral: true });
+        return;
+      }
+
       // ✅ จัดการปุ่มอนุมัติ/ปฏิเสธสัญชาติ
       if (interaction.isButton() && (interaction.customId.startsWith('approve_citizen_') || interaction.customId.startsWith('reject_citizen_'))) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
