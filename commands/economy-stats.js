@@ -1,5 +1,5 @@
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { loadUsers } = require('../utils/economyUtils');
-
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('economy-stats')
