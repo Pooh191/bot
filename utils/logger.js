@@ -12,13 +12,27 @@ async function sendEconomyLog(client, title, description, color = 'Blue', isPubl
     const logEntry = {
       timestamp: Date.now(),
       title,
-      description: description.replace(/\n/g, ' | ').substring(0, 500), 
-      isPublic
+      description: description.replace(/\r?\n/g, ' | ').substring(0, 2000), 
+      isPublic,
+      content: content
     };
 
     logs.unshift(logEntry);
-    if (logs.length > 500) logs.length = 500;
+    if (logs.length > 10000) logs.length = 10000;
     setCacheAndSave('history_logs', logs, true);
+
+    // 2. บันทึกลงไฟล์เครื่อง (Persistent Backup System)
+    const fs = require('fs');
+    const path = require('path');
+    const logsDir = path.join(process.cwd(), 'data', 'logs');
+    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+    
+    const dateStr = new Date().toISOString().split('T')[0];
+    const logFile = path.join(logsDir, `${dateStr}.log`);
+    // บันทึกแบบละเอียดลงไฟล์ โดยไม่จำกัดความยาวเท่าใน Database
+    const cleanDesc = description.replace(/\r?\n/g, ' ');
+    const logText = `[${new Date().toISOString()}] [${title}] ${content ? `(Tag: ${content}) ` : ''}${cleanDesc}\n`;
+    fs.appendFileSync(logFile, logText, 'utf8');
 
     // 2. ส่งไปยังห้อง Discord ประจำการ (Real-time)
     const displayDescription = description.length > 4000 

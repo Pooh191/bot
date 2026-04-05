@@ -208,11 +208,21 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 
 // guildMemberUpdate: มอบยศ CIV ตามลำดับ
 client.on('guildMemberUpdate', async (oldM, newM) => {
-  const civRole = newM.guild.roles.cache.find(r => r.name === CIVILIAN_ROLE_NAME);
-  if (!civRole) {
-    // console.error(`❌ ไม่พบยศหลักที่ชื่อ "${CIVILIAN_ROLE_NAME}" ในเซิร์ฟเวอร์นี้`);
-    return;
+  // 1. ตรวจสอบการเปลี่ยนยศทั่วไป (Log ให้แอดมิน)
+  const addedRoles = newM.roles.cache.filter(role => !oldM.roles.cache.has(role.id));
+  const removedRoles = oldM.roles.cache.filter(role => !newM.roles.cache.has(role.id));
+
+  if (addedRoles.size > 0) {
+    const roleNames = addedRoles.map(r => r.name).join(', ');
+    sendEconomyLog(client, '🎭 ยศเพิ่มขึ้น (Role Added)', `**ผู้ใช้:** ${newM.user.tag} (<@${newM.id}>)\n**ยศที่ได้รับ:** ${roleNames}`, 'Green', false);
   }
+  if (removedRoles.size > 0) {
+    const roleNames = removedRoles.map(r => r.name).join(', ');
+    sendEconomyLog(client, '🎭 ยศถูกถอน (Role Removed)', `**ผู้ใช้:** ${newM.user.tag} (<@${newM.id}>)\n**ยศที่หายไป:** ${roleNames}`, 'Red', false);
+  }
+
+  const civRole = newM.guild.roles.cache.find(r => r.name === CIVILIAN_ROLE_NAME);
+  if (!civRole) return;
 
   const had = oldM.roles.cache.has(civRole.id);
   const has = newM.roles.cache.has(civRole.id);
@@ -302,6 +312,11 @@ client.on('messageDelete', async (message) => {
   sendEconomyLog(client, '🗑️ ข้อความถูกลบ (Message Deleted)', `**ผู้ส่ง:** <@${message.author.id}>\n**ห้อง:** <#${message.channelId}>\n**เนื้อหา:** ${message.content || '[ไม่มีข้อความ/เป็นไฟล์]'}`, 'Orange', false);
 });
 
+client.on('messageDeleteBulk', messages => {
+  const channel = messages.first()?.channel;
+  sendEconomyLog(client, '🗑️ ลบข้อความจำนวนมาก (Bulk Delete)', `**ห้อง:** <#${channel?.id}>\n**จำนวน:** ${messages.size} ข้อความถูกลบพร้อมกัน`, 'Orange', false);
+});
+
 client.on('messageUpdate', async (oldMessage, newMessage) => {
   if (!newMessage.guild || !newMessage.author || newMessage.author.bot) return;
   if (oldMessage.content === newMessage.content) return;
@@ -321,8 +336,8 @@ client.on('messageCreate', async (message) => {
     message.channel.send(`🎊 ยินดีด้วยคุณ <@${message.author.id}>! เลเวลของคุณเพิ่มขึ้นเป็น **Level ${result.level}** แล้ว!`);
   }
 
-  // เพื่อไม่ให้ Logs ไฟล์บวมเกินไป เราจะบันทึกสั้นๆ
-  sendEconomyLog(client, '💬 แชท (Message)', `**ผู้ส่ง:** <@${message.author.id}> แชทใน <#${message.channelId}>: ${message.content.substring(0, 100)}`, 'White', false);
+  // บันทึก Log แชท (เพิ่มความยาวเป็น 300 ตัวอักษร)
+  sendEconomyLog(client, '💬 แชท (Message)', `**ผู้ส่ง:** ${message.author.tag} (<@${message.author.id}>) แชทใน <#${message.channelId}>: ${message.content.substring(0, 300)}`, 'White', false);
 });
 
 // Member Join/Leave Logging
@@ -332,6 +347,35 @@ client.on('guildMemberAdd', (member) => {
 
 client.on('guildMemberRemove', (member) => {
   sendEconomyLog(client, '📤 สมาชิกออก (Member Leave)', `**ผู้ใช้:** <@${member.id}>\n**ออกจากเซิร์ฟเวอร์**`, 'Orange', false);
+});
+
+// Admin Log: Channel Changes
+client.on('channelCreate', channel => {
+  if (channel.guild) sendEconomyLog(client, '🆕 สร้างห้องใหม่ (Channel Created)', `**ชื่อ:** ${channel.name}\n**ประเภท:** ${channel.type}\n**ID:** ${channel.id}`, 'Blue', false);
+});
+
+client.on('channelDelete', channel => {
+  if (channel.guild) sendEconomyLog(client, '🚫 ลบห้อง (Channel Deleted)', `**ชื่อ:** ${channel.name}\n**ประเภท:** ${channel.type}\n**ID:** ${channel.id}`, 'Red', false);
+});
+
+// Admin Log: Role Changes (Server level)
+client.on('roleCreate', role => {
+  sendEconomyLog(client, '🛡️ สร้างยศใหม่ (Role Created)', `**ชื่อ:** ${role.name}\n**ID:** ${role.id}`, 'Green', false);
+});
+
+client.on('roleDelete', role => {
+  sendEconomyLog(client, '🗑️ ลบยศ (Role Deleted)', `**ชื่อ:** ${role.name}\n**ID:** ${role.id}`, 'Red', false);
+});
+
+// Admin Log: Server Update
+client.on('guildUpdate', (oldGuild, newGuild) => {
+  let changes = '';
+  if (oldGuild.name !== newGuild.name) changes += `\n**ชื่อเก่า:** ${oldGuild.name}\n**ชื่อใหม่:** ${newGuild.name}`;
+  if (oldGuild.icon !== newGuild.icon) changes += `\n**ไอคอน:** มีการเปลี่ยนรูปโปรไฟล์เซิร์ฟเวอร์`;
+  
+  if (changes) {
+    sendEconomyLog(client, '🏛️ อัปเดตข้อมูลเซิร์ฟเวอร์ (Server Updated)', `มีการเปลี่ยนแปลงดังนี้:${changes}`, 'Gold', false);
+  }
 });
 
 

@@ -388,8 +388,9 @@ module.exports = {
         try {
           await cmd.execute(interaction, client);
 
-          // Log Slash command usage for Admin
-          sendEconomyLog(client, '⌨️ ใช้คำสั่ง Slash', `**ผู้ใช้:** <@${interaction.user.id}>\n**คำสั่ง:** /${interaction.commandName}`, 'Aqua', false);
+          // Log Slash command usage for Admin (รวมถึง Option ที่ใช้)
+          const options = interaction.options.data.map(opt => `${opt.name}:${opt.value}`).join(' ');
+          sendEconomyLog(client, '⌨️ ใช้คำสั่ง Slash', `**ผู้ใช้:** ${interaction.user.tag} (<@${interaction.user.id}>)\n**คำสั่ง:** /${interaction.commandName} ${options}`, 'Aqua', false);
         } catch (e) {
           console.error(e);
           if (interaction.replied || interaction.deferred) {
