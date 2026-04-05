@@ -4,7 +4,7 @@ const { getCache, setCacheAndSave } = require('./mongoManager');
 /**
  * ส่ง Log ไปยังห้องที่กำหนดใน Discord และบันทึกลงไฟล์
  */
-async function sendEconomyLog(client, title, description, color = 'Blue', isPublic = false) {
+async function sendEconomyLog(client, title, description, color = 'Blue', isPublic = false, content = null) {
   try {
     // 1. บันทึกลง MongoDB (และ Cache)
     let logs = getCache('history_logs') || [];
@@ -36,7 +36,7 @@ async function sendEconomyLog(client, title, description, color = 'Blue', isPubl
     if (adminLogId) {
       const channel = await client.channels.fetch(adminLogId).catch(() => null);
       if (channel && channel.isTextBased()) {
-        await channel.send({ embeds: [embed] }).catch(() => {});
+        await channel.send({ content: content, embeds: [embed] }).catch(() => {});
       }
     }
 

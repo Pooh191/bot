@@ -112,7 +112,31 @@ module.exports = {
 
             // Log
             const { sendEconomyLog } = require('../utils/logger');
-            sendEconomyLog(interaction.client, '🤝 สลับจังหวัดสำเร็จ (Trade)', `${user.user.tag} (${userProvRole.name}) 🔁 ${target.user.tag} (${targetProvRole.name})`, 'Green', false);
+            const adminNotifyMessage = `🔔 **แจ้งเตือนแอดมิน:** มีการแลกเปลี่ยนจังหวัดเกิดขึ้นระหว่าง <@${user.id}> และ <@${target.id}>`;
+            
+            // ส่ง Log ไปยัง Admin Log (พร้อม Mention แจ้งเตือน)
+            await sendEconomyLog(
+              interaction.client, 
+              '🤝 สลับจังหวัดสำเร็จ (Trade)', 
+              `**ผู้ใช้ 1:** ${user.user.tag} (<@${user.id}>) - เดิม: **${userProvRole.name}**\n**ผู้ใช้ 2:** ${target.user.tag} (<@${target.id}>) - เดิม: **${targetProvRole.name}**\n**สถานะ:** สลับจังหวัดกันเรียบร้อยแล้ว`, 
+              'Green', 
+              false,
+              adminNotifyMessage
+            );
+
+            // ส่งแจ้งเตือนเพิ่มเติมไปยังห้อง Citizen Admin (ถ้ามีการตั้งค่าไว้)
+            const citizenAdminId = process.env.CITIZEN_ADMIN_CHANNEL;
+            if (citizenAdminId) {
+              const channel = await interaction.client.channels.fetch(citizenAdminId).catch(() => null);
+              if (channel && channel.isTextBased()) {
+                const adminEmbed = new EmbedBuilder()
+                  .setTitle('🤝 รายงานการแลกเปลี่ยนจังหวัด')
+                  .setDescription(`มีการแลกเปลี่ยนจังหวัดเกิดขึ้นใหม่!\n\n👤 <@${user.id}> (${userProvRole.name}) 🔁 👤 <@${target.id}> (${targetProvRole.name})`)
+                  .setColor('Green')
+                  .setTimestamp();
+                await channel.send({ content: '🔔 **[ADMIN NOTIFICATION]**', embeds: [adminEmbed] }).catch(() => {});
+              }
+            }
 
           } else {
             await i.editReply({ content: '❌ คุณปฏิเสธคำขอแลกเปลี่ยนนี้', embeds: [], components: [] });
