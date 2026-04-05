@@ -112,7 +112,7 @@ module.exports = {
 
             // Log
             const { sendEconomyLog } = require('../utils/logger');
-            const adminNotifyMessage = `🔔 **แจ้งเตือนแอดมิน:** มีการแลกเปลี่ยนจังหวัดเกิดขึ้นระหว่าง <@${user.id}> และ <@${target.id}>`;
+            const adminNotifyMessage = `🔔 **แจ้งเตือนแอดมิน:** <@&1485680070063292487> มีการแลกเปลี่ยนจังหวัดเกิดขึ้นระหว่าง <@${user.id}> และ <@${target.id}>`;
             
             // ส่ง Log ไปยัง Admin Log (พร้อม Mention แจ้งเตือน)
             await sendEconomyLog(
