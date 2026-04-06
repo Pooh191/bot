@@ -272,7 +272,7 @@ module.exports = {
 
 
       // ✅ ระบบ Ticket: กดปุ่มเปิดทิคเก็ต
-      if (interaction.isButton() && interaction.customId === 'ticket_create') {
+      if (interaction.isButton() && (interaction.customId === 'ticket_create' || interaction.customId === 'ticket_create_gov' || interaction.customId === 'ticket_create_admin')) {
         const TICKET_CONFIG_FILE = path.join(__dirname, '..', 'data', 'ticket_config.json');
         
         if (!fs.existsSync(TICKET_CONFIG_FILE)) {
@@ -280,24 +280,37 @@ module.exports = {
         }
         
         const config = JSON.parse(fs.readFileSync(TICKET_CONFIG_FILE, 'utf8'));
-        const categoryId = config.categoryId;
-        const adminRoleId = config.adminRoleId;
+        
+        // กำหนดข้อมูลเริ่มต้น (เผื่อเป็นปุ่มเก่า ticket_create)
+        let targetRoleId = config.adminRoleId;
+        let targetCategoryId = config.adminCategoryId || config.categoryId;
+        let ticketPrefix = 'admin';
+        let ticketTitle = 'ศูนย์ช่วยเหลือ (Support Ticket)';
+        let ticketLabel = 'แอดมิน';
+
+        if (interaction.customId === 'ticket_create_gov') {
+          targetRoleId = config.govRoleId;
+          targetCategoryId = config.govCategoryId;
+          ticketPrefix = 'gov';
+          ticketTitle = 'ติดต่อรัฐบาล (Government Contact)';
+          ticketLabel = 'รัฐบาล';
+        }
 
         // ตรวจสอบว่า Category ยังมีอยู่จริงหรือไม่
-        const category = interaction.guild.channels.cache.get(categoryId);
+        const category = interaction.guild.channels.cache.get(targetCategoryId);
         if (!category) {
-          return interaction.reply({ content: '❌ ไม่พบหมวดหมู่ (Category) ที่ตั้งค่าไว้ (อาจถูกลบไปแล้ว) กรุณาให้แอดมินใช้คำสั่ง /setupticket ใหม่อีกครั้ง', flags: [MessageFlags.Ephemeral] });
+          return interaction.reply({ content: `❌ ไม่พบหมวดหมู่ของ${ticketLabel}ที่ตั้งค่าไว้ (อาจถูกลบไปแล้ว) กรุณาให้แอดมินใช้คำสั่ง /setupticket ใหม่อีกครั้ง`, flags: [MessageFlags.Ephemeral] });
         }
 
-        // ตรวจสอบห้องเดิมที่มีอยู่แล้ว
-        const ticketChannelName = `ticket-${interaction.user.username.toLowerCase()}`.replace(/[^a-z0-9-]/g, '');
-        const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName && c.parentId === categoryId);
+        // ตรวจสอบห้องเดิมที่มีอยู่แล้วในหมวดหมู่นั้นๆ
+        const ticketChannelName = `${ticketPrefix}-${interaction.user.username.toLowerCase()}`.replace(/[^a-z0-9-]/g, '');
+        const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName && c.parentId === targetCategoryId);
         
         if (existingChannel) {
-          return interaction.reply({ content: `❌ คุณเปิดทิคเก็ตไว้แล้วที่ห้อง <#${existingChannel.id}>`, flags: [MessageFlags.Ephemeral] });
+          return interaction.reply({ content: `❌ คุณเปิดทิคเก็ต${ticketLabel}ไว้แล้วที่ห้อง <#${existingChannel.id}>`, flags: [MessageFlags.Ephemeral] });
         }
 
-        // สร้างห้องทิคเก็ตใหม่โดยใช้โครงสร้างที่รัดกุมที่สุด
+        // สร้างห้องทิคเก็ตใหม่
         try {
           const newChannel = await interaction.guild.channels.create({
             name: ticketChannelName,
@@ -305,7 +318,7 @@ module.exports = {
             parent: category.id,
           });
 
-          // ทยอยอัปเดตสิทธิ์ทีละขั้น (เพื่อป้องกันบัคจาก API Array ที่ยาวเกินตอนสร้าง)
+          // สิทธิ์ห้อง
           await newChannel.permissionOverwrites.edit(interaction.guild.id, {
             ViewChannel: false
           }).catch(() => null);
@@ -317,17 +330,19 @@ module.exports = {
             ReadMessageHistory: true
           }).catch(() => null);
 
-          // สิทธิ์แอดมิน
-          await newChannel.permissionOverwrites.edit(adminRoleId, {
-            ViewChannel: true,
-            SendMessages: true,
-            ReadMessageHistory: true
-          }).catch(() => null);
+          // สิทธิ์ Role ที่รับผิดชอบ
+          if (targetRoleId) {
+            await newChannel.permissionOverwrites.edit(targetRoleId, {
+              ViewChannel: true,
+              SendMessages: true,
+              ReadMessageHistory: true
+            }).catch(() => null);
+          }
 
           const embed = new EmbedBuilder()
-            .setTitle('🎫 ศูนย์ช่วยเหลือ (Support Ticket)')
-            .setDescription(`สวัสดีครับ <@${interaction.user.id}>\n\nโปรดพิมพ์คำถาม รายงานปัญหา หรือแจ้งเรื่องผู้เล่นผิดกฎไว้ที่นี่ได้เลย\nทีมงาน ( <@&${adminRoleId}> ) จะรีบทบทวนและตอบกลับให้เร็วที่สุดครับ!\n\nเมื่อสนทนาจบผลแล้ว สามารถกดปุ่มด้านล่างเพื่อปิดทิคเก็ตช่องนี้ทิ้งได้เลย`)
-            .setColor('#2b2d31');
+            .setTitle(`🎫 ${ticketTitle}`)
+            .setDescription(`สวัสดีครับ <@${interaction.user.id}>\n\nนี่คือห้องสำหรับ**ติดต่อ${ticketLabel}**\nโปรดพิมพ์รายละเอียดเรื่องที่ต้องการแจ้งไว้ที่นี่\nเจ้าหน้าที่ ( <@&${targetRoleId}> ) จะรีบมาตอบกลับครับ!\n\nเมื่อเสร็จสิ้นภารกิจแล้ว สามารถกดปุ่มด้านล่างเพื่อปิดทิคเก็ต`)
+            .setColor(ticketPrefix === 'gov' ? '#3498db' : '#e74c3c');
 
           const closeBtn = new ButtonBuilder()
             .setCustomId('ticket_close_request')
@@ -337,12 +352,12 @@ module.exports = {
 
           const row = new ActionRowBuilder().addComponents(closeBtn);
 
-          await newChannel.send({ content: `<@${interaction.user.id}> | <@&${adminRoleId}>`, embeds: [embed], components: [row] });
+          await newChannel.send({ content: `<@${interaction.user.id}> | <@&${targetRoleId}>`, embeds: [embed], components: [row] });
 
-          await interaction.reply({ content: `✅ สร้างห้องทิคเก็ตสำเร็จแล้ว! ไปที่ <#${newChannel.id}> ได้เลยครับ`, flags: [MessageFlags.Ephemeral] });
+          await interaction.reply({ content: `✅ สร้างห้องทิคเก็ต${ticketLabel}สำเร็จแล้ว! ไปที่ <#${newChannel.id}> ได้เลยครับ`, flags: [MessageFlags.Ephemeral] });
         } catch (error) {
           console.error('Error creating ticket channel:', error);
-          await interaction.reply({ content: '❌ เกิดข้อผิดพลาดในการสร้างห้องทิคเก็ต (บอทอาจจะไม่มีสิทธิ์ Manage Channels)', flags: [MessageFlags.Ephemeral] });
+          await interaction.reply({ content: '❌ เกิดข้อผิดพลาดในการสร้างห้องทิคเก็ต', flags: [MessageFlags.Ephemeral] });
         }
         return;
       }

@@ -31,9 +31,14 @@ module.exports = {
         if (fs.existsSync(TICKET_CONFIG_FILE)) {
             try {
                 const config = JSON.parse(fs.readFileSync(TICKET_CONFIG_FILE, 'utf8'));
-                if (config.categoryId) {
-                    // กวาดหาห้องที่มีชื่อขึ้นต้นว่า ticket- และอยู่ใน category ที่ตั้งไว้
-                    const categoryChannels = interaction.guild.channels.cache.filter(c => c.parentId === config.categoryId && c.name.startsWith('ticket-'));
+                const categoryIds = [config.adminCategoryId, config.govCategoryId, config.categoryId].filter(id => id);
+                
+                if (categoryIds.length > 0) {
+                    // กวาดหาห้องที่มีชื่อขึ้นต้นว่า gov-, admin- หรือ ticket- และอยู่ใน category ที่ตั้งไว้
+                    const categoryChannels = interaction.guild.channels.cache.filter(c => 
+                        categoryIds.includes(c.parentId) && 
+                        (c.name.startsWith('gov-') || c.name.startsWith('admin-') || c.name.startsWith('ticket-'))
+                    );
                     for (const [, channel] of categoryChannels) {
                         try {
                             await channel.delete('Admin requested to reset ticket system');
