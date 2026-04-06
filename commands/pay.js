@@ -5,7 +5,7 @@ const { sendEconomyLog } = require('../utils/logger');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('pay')
-    .setDescription('โอนเงินให้ผู้ใช้คนอื่น (มีค่าธรรมเนียมภาษี 5%)')
+    .setDescription('โอนเงินให้ผู้ใช้คนอื่น (ไม่มีค่าธรรมเนียม)')
     .addUserOption(opt => 
       opt.setName('target')
          .setDescription('เลือกผู้รับเงิน')
@@ -37,14 +37,9 @@ module.exports = {
        return interaction.reply({ content: `❌ คุณมียอดเงินในกระเป๋าไม่เพียงพอ (ขาดอีก ${(amount - sender.balance).toLocaleString()} บาท)`, ephemeral: true });
     }
 
-    // หักภาษี 5%
-    const taxRate = 0.05;
-    const tax = Math.floor(amount * taxRate);
-    const finalAmount = amount - tax;
-
-    // ทำรายการ
+    // ทำรายการ (ไม่มีภาษี)
     sender.balance -= amount;
-    recipient.balance = (recipient.balance || 0) + finalAmount;
+    recipient.balance = (recipient.balance || 0) + amount;
 
     saveUsers(allUsers);
 
@@ -54,8 +49,7 @@ module.exports = {
       .setDescription(`คุณได้ทำการโอนเงินให้ <@${target.id}> เรียบร้อยแล้ว`)
       .addFields(
         { name: 'จำนวนเงินที่โอน', value: `${amount.toLocaleString()} บาท (THB)`, inline: true },
-        { name: 'สุทธิที่ได้รับ (หักภาษี 5%)', value: `${finalAmount.toLocaleString()} บาท (THB)`, inline: true },
-        { name: 'ยอดเงินคงเหลือของคุณ', value: `${sender.balance.toLocaleString()} บาท`, inline: false }
+        { name: 'ยอดเงินคงเหลือของคุณ', value: `${sender.balance.toLocaleString()} บาท`, inline: true }
       )
       .setTimestamp();
 
@@ -65,7 +59,7 @@ module.exports = {
     await sendEconomyLog(
       interaction.client,
       '💸 โอนเงิน (Transfer)',
-      `**ผู้ส่ง:** <@${senderId}>\n**ผู้รับ:** <@${target.id}>\n**จำนวน:** ${amount.toLocaleString()} บาท\n**ภาษี:** ${tax.toLocaleString()} บาท\n**สุทธิ:** ${finalAmount.toLocaleString()} บาท`,
+      `**ผู้ส่ง:** <@${senderId}>\n**ผู้รับ:** <@${target.id}>\n**จำนวนที่โอน:** ${amount.toLocaleString()} บาท`,
       'Green',
       true // ส่งห้องสาธารณะด้วย
     );
