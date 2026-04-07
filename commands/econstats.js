@@ -76,9 +76,7 @@ module.exports = {
         const r = resources[prov];
         resourceSummary += `📍 **${prov}:** 🍀 O2:${r.oxygen}% | 🌪️ CO2:${r.co2}%\n`;
       }
-      if (resourceSummary) {
-        embed.addFields({ name: '🍀 สถานะทรัพยากร/สิ่งแวดล้อม:', value: resourceSummary, inline: false });
-      }
+      embed.addFields({ name: '🍀 สถานะทรัพยากร/สิ่งแวดล้อม:', value: resourceSummary || 'ไม่มีข้อมูล', inline: false });
 
       await interaction.editReply({ embeds: [embed] });
 
