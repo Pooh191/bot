@@ -91,7 +91,23 @@ function saveConfig(config) {
 
 // —————— Resource functions ——————
 function loadResources() {
-  return getCache('resources') || {};
+  const res = getCache('resources') || {};
+  
+  // กู้คืนจากไฟล์ถ้าใน RAM/DB เป็นค่าว่าง
+  if (Object.keys(res).length === 0) {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const localData = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/resources.json'), 'utf8'));
+      if (Object.keys(localData).length > 0) {
+        return localData;
+      }
+    } catch (e) {
+      // ignored
+    }
+  }
+
+  return res;
 }
 
 function saveResources(resources) {
