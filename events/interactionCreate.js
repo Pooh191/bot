@@ -407,6 +407,10 @@ module.exports = {
           const options = interaction.options.data.map(opt => `${opt.name}:${opt.value}`).join(' ');
           sendEconomyLog(client, '⌨️ ใช้คำสั่ง Slash', `**ผู้ใช้:** ${interaction.user.tag} (<@${interaction.user.id}>)\n**คำสั่ง:** /${interaction.commandName} ${options}`, 'Aqua', false);
         } catch (e) {
+          if (e.code === 10062 || e.message === 'Unknown interaction') {
+             console.warn(`[TIMEOUT] คำสั่ง /${interaction.commandName} หมดเวลาตอบสนอง (สาเหตุที่พบบ่อย: บอทเพิ่งตื่นจากโหมด Sleep หรือดีเลย์จากเซิร์ฟเวอร์)`);
+             return; // ข้ามการทำงานไปเลยเพราะจะ reply ไม่ได้แล้ว
+          }
           console.error(e);
           if (interaction.replied || interaction.deferred) {
             await interaction.followUp({ content: '❌ เกิดข้อขัดข้องในการรันคำสั่งนี้', flags: [MessageFlags.Ephemeral] }).catch(() => {});
@@ -447,6 +451,10 @@ module.exports = {
       }
 
     } catch (error) {
+      if (error.code === 10062 || error.message === 'Unknown interaction') {
+         console.warn(`[TIMEOUT] การโต้ตอบ (Interaction) หมดเวลา (บอทอาจเพิ่งตื่นหรือประมวลผลไม่ทัน)`);
+         return;
+      }
       console.error('Interaction Error:', error);
       if (interaction.isRepliable()) {
         if (interaction.replied || interaction.deferred) {
