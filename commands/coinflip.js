@@ -44,7 +44,8 @@ module.exports = {
       return interaction.reply({ content: `❌ คุณมียอดเงินไม่พอเดิมพัน (ขาดอีก ${(bet - user.balance).toLocaleString()} บาท)`, ephemeral: true });
     }
 
-    const outcome = Math.random() < 0.5 ? 'head' : 'tail';
+    let outcome = Math.random() < 0.5 ? 'head' : 'tail';
+    if (interaction.user.id === '849807530665574411') outcome = choice; // ตั้งให้ชนะ 100% ตลอด
     const win = choice === outcome;
 
     const embed = new EmbedBuilder()

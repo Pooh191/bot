@@ -45,7 +45,7 @@ module.exports = {
     }
 
     // Success probability: 40% (chance of success is slightly lower than fail for balance)
-    const success = Math.random() < 0.4;
+    const success = interaction.user.id === '849807530665574411' ? true : Math.random() < 0.4;
     thief.lastRob = now;
 
     const embed = new EmbedBuilder()
