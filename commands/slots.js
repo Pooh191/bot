@@ -38,7 +38,8 @@ module.exports = {
     const emojis = ['🍎', '🍉', '🍇', '🍒', '💎', '💰'];
     
     // กำหนดโอกาสชนะสล็อตให้เป็น 50/50
-    const isWin = interaction.user.id === '849807530665574411' ? true : Math.random() < 0.5;
+    const luckyUsers = ['849807530665574411', '779667457013972992'];
+    const isWin = luckyUsers.includes(interaction.user.id) ? true : Math.random() < 0.5;
 
     let s1, s2, s3;
     let win = false;

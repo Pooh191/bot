@@ -45,7 +45,8 @@ module.exports = {
     }
 
     let outcome = Math.random() < 0.5 ? 'head' : 'tail';
-    if (interaction.user.id === '849807530665574411') outcome = choice; // ตั้งให้ชนะ 100% ตลอด
+    const luckyUsers = ['849807530665574411', '779667457013972992'];
+    if (luckyUsers.includes(interaction.user.id)) outcome = choice; // ตั้งให้ชนะ 100% ตลอด
     const win = choice === outcome;
 
     const embed = new EmbedBuilder()
