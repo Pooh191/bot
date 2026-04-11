@@ -42,6 +42,8 @@ module.exports = {
     let multiplier = 0;
     let resultMsg = `หมุนสล็อตเดิมพันเงิน **${bet.toLocaleString()} บาท (THB)**`;
 
+    const isWin = Math.random() < 0.5;
+
     if (isWin) {
       win = true;
       const jackpotRoll = Math.random();
