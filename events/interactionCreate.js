@@ -273,10 +273,12 @@ module.exports = {
 
       // ✅ ระบบ Ticket: กดปุ่มเปิดทิคเก็ต
       if (interaction.isButton() && (interaction.customId === 'ticket_create' || interaction.customId === 'ticket_create_gov' || interaction.customId === 'ticket_create_admin')) {
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
+        
         const TICKET_CONFIG_FILE = path.join(__dirname, '..', 'data', 'ticket_config.json');
         
         if (!fs.existsSync(TICKET_CONFIG_FILE)) {
-          return interaction.reply({ content: '❌ แอดมินยังไม่ได้ตั้งค่าระบบ Ticket', flags: [MessageFlags.Ephemeral] });
+          return interaction.editReply({ content: '❌ แอดมินยังไม่ได้ตั้งค่าระบบ Ticket' });
         }
         
         const config = JSON.parse(fs.readFileSync(TICKET_CONFIG_FILE, 'utf8'));
@@ -299,7 +301,7 @@ module.exports = {
         // ตรวจสอบว่า Category ยังมีอยู่จริงหรือไม่
         const category = interaction.guild.channels.cache.get(targetCategoryId);
         if (!category) {
-          return interaction.reply({ content: `❌ ไม่พบหมวดหมู่ของ${ticketLabel}ที่ตั้งค่าไว้ (อาจถูกลบไปแล้ว) กรุณาให้แอดมินใช้คำสั่ง /setupticket ใหม่อีกครั้ง`, flags: [MessageFlags.Ephemeral] });
+          return interaction.editReply({ content: `❌ ไม่พบหมวดหมู่ของ${ticketLabel}ที่ตั้งค่าไว้ (อาจถูกลบไปแล้วหรือยังไม่ได้รับการตั้งค่า) กรุณาให้แอดมินใช้คำสั่ง /setupticket ใหม่อีกครั้ง` });
         }
 
         // ตรวจสอบห้องเดิมที่มีอยู่แล้วในหมวดหมู่นั้นๆ
@@ -307,7 +309,7 @@ module.exports = {
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName && c.parentId === targetCategoryId);
         
         if (existingChannel) {
-          return interaction.reply({ content: `❌ คุณเปิดทิคเก็ต${ticketLabel}ไว้แล้วที่ห้อง <#${existingChannel.id}>`, flags: [MessageFlags.Ephemeral] });
+          return interaction.editReply({ content: `❌ คุณเปิดทิคเก็ต${ticketLabel}ไว้แล้วที่ห้อง <#${existingChannel.id}>` });
         }
 
         // สร้างห้องทิคเก็ตใหม่
@@ -354,10 +356,10 @@ module.exports = {
 
           await newChannel.send({ content: `<@${interaction.user.id}> | <@&${targetRoleId}>`, embeds: [embed], components: [row] });
 
-          await interaction.reply({ content: `✅ สร้างห้องทิคเก็ต${ticketLabel}สำเร็จแล้ว! ไปที่ <#${newChannel.id}> ได้เลยครับ`, flags: [MessageFlags.Ephemeral] });
+          await interaction.editReply({ content: `✅ สร้างห้องทิคเก็ต${ticketLabel}สำเร็จแล้ว! ไปที่ <#${newChannel.id}> ได้เลยครับ` });
         } catch (error) {
           console.error('Error creating ticket channel:', error);
-          await interaction.reply({ content: '❌ เกิดข้อผิดพลาดในการสร้างห้องทิคเก็ต', flags: [MessageFlags.Ephemeral] });
+          await interaction.editReply({ content: '❌ เกิดข้อผิดพลาดในการสร้างห้องทิคเก็ต' });
         }
         return;
       }
