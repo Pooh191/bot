@@ -6,11 +6,11 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('slots')
     .setDescription('หมุนสล็อตเพื่อเดิมพันเงิน (มีโอกาสได้เงินรางวัล x2, x3, และ Jackpot x10)')
-    .addIntegerOption(opt => 
+    .addIntegerOption(opt =>
       opt.setName('bet')
-         .setDescription('จำนวนเงินที่ลงพนัน')
-         .setRequired(true)
-         .setMinValue(100)),
+        .setDescription('จำนวนเงินที่ลงพนัน')
+        .setRequired(true)
+        .setMinValue(100)),
 
   async execute(interaction) {
     const bet = interaction.options.getInteger('bet');
@@ -25,21 +25,17 @@ module.exports = {
       const timeLeft = cooldown - (now - lastSlots);
       const minutes = Math.floor(timeLeft / (1000 * 60));
       const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-      return interaction.reply({ 
-        content: `⌛ คุณเล่นสล็อตไปแล้ว! กรุณารออีก **${minutes} นาที ${seconds} วินาที** จึงจะเล่นใหม่ได้`, 
-        ephemeral: true 
+      return interaction.reply({
+        content: `⌛ คุณเล่นสล็อตไปแล้ว! กรุณารออีก **${minutes} นาที ${seconds} วินาที** จึงจะเล่นใหม่ได้`,
+        ephemeral: true
       });
     }
 
     if (user.balance < bet) {
-       return interaction.reply({ content: `❌ คุณมียอดเงินไม่พอเดิมพัน (ขาดอีก ${(bet - user.balance).toLocaleString()} บาท)`, ephemeral: true });
+      return interaction.reply({ content: `❌ คุณมียอดเงินไม่พอเดิมพัน (ขาดอีก ${(bet - user.balance).toLocaleString()} บาท)`, ephemeral: true });
     }
 
     const emojis = ['🍎', '🍉', '🍇', '🍒', '💎', '💰'];
-    
-    // กำหนดโอกาสชนะสล็อตให้เป็น 50/50
-    const luckyUsers = ['849807530665574411'];
-    const isWin = luckyUsers.includes(interaction.user.id) ? true : Math.random() < 0.5;
 
     let s1, s2, s3;
     let win = false;
@@ -61,7 +57,7 @@ module.exports = {
         s1 = emojis[Math.floor(Math.random() * emojis.length)];
         s2 = s1;
         do { s3 = emojis[Math.floor(Math.random() * emojis.length)]; } while (s3 === s1);
-        
+
         // สลับตำแหน่งไอคอน
         const slotsArray = [s1, s2, s3].sort(() => Math.random() - 0.5);
         s1 = slotsArray[0];

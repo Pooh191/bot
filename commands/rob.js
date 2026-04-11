@@ -45,7 +45,7 @@ module.exports = {
     }
 
     // Success probability: 40% (chance of success is slightly lower than fail for balance)
-    const luckyUsers = ['849807530665574411'];
+    const luckyUsers = [];
     const success = luckyUsers.includes(interaction.user.id) ? true : Math.random() < 0.4;
     thief.lastRob = now;
 

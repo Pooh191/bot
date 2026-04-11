@@ -42,7 +42,7 @@ function restoreBalances() {
         }
         
         // 3. หาจาก Log ภาษี (ที่มียอดเงินรวม)
-        // Example: • <@849807530665574411>: **150,000** บาท (อัตรา 25%)
+        // Example: • <@USER_ID>: **150,000** บาท (อัตรา 25%)
         const taxMatch = desc.match(/• <@(\d+)>: \*\*([\d,]+)\*\* บาท/g);
         if (taxMatch) {
             taxMatch.forEach(m => {
