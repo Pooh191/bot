@@ -15,7 +15,7 @@ const TICKET_CONFIG_FILE = path.join(__dirname, '..', 'data', 'ticket_config.jso
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('setupticket')
-    .setDescription('🎫 (Admin) ตั้งค่าระบบส่งทิคเก็ตแยกหน่วยงาน รัฐบาล/แอดมิน')
+    .setDescription('🎫 (Admin) ตั้งค่าระบบส่งทิคเก็ตแยกหน่วยงาน รัฐบาล/รัฐสภา/แอดมิน')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addChannelOption(option => 
       option.setName('channel')
@@ -29,7 +29,7 @@ module.exports = {
         .setRequired(true))
     .addRoleOption(option =>
       option.setName('admin_role')
-        .setDescription('ยศ (Role) ของแอดมินหรือเจ้าหน้าที่ที่จะมองเห็นห้องทิคเก็ตติดต่อแอดมิน')
+        .setDescription('ยศ (Role) ของแอดมินหรือเจ้าหน้าที่')
         .setRequired(true))
     .addChannelOption(option =>
       option.setName('gov_category')
@@ -38,7 +38,16 @@ module.exports = {
         .setRequired(true))
     .addRoleOption(option =>
       option.setName('gov_role')
-        .setDescription('ยศ (Role) ของสมาชิกรัฐบาลที่จะมองเห็นห้องทิคเก็ตติดต่อรัฐบาล')
+        .setDescription('ยศ (Role) ของสมาชิกรัฐบาล')
+        .setRequired(true))
+    .addChannelOption(option =>
+      option.setName('parl_category')
+        .setDescription('หมวดหมู่ (Category) สำหรับ Ticket ติดต่อรัฐสภา')
+        .addChannelTypes(ChannelType.GuildCategory)
+        .setRequired(true))
+    .addRoleOption(option =>
+      option.setName('parl_role')
+        .setDescription('ยศ (Role) ของสมาชิกรัฐสภา')
         .setRequired(true)),
         
   async execute(interaction) {
@@ -51,20 +60,24 @@ module.exports = {
     const adminRole = interaction.options.getRole('admin_role');
     const govCategory = interaction.options.getChannel('gov_category');
     const govRole = interaction.options.getRole('gov_role');
+    const parlCategory = interaction.options.getChannel('parl_category');
+    const parlRole = interaction.options.getRole('parl_role');
 
     // บันทึกการตั้งค่า
     const config = {
       adminCategoryId: adminCategory.id,
       adminRoleId: adminRole.id,
       govCategoryId: govCategory.id,
-      govRoleId: govRole.id
+      govRoleId: govRole.id,
+      parlCategoryId: parlCategory.id,
+      parlRoleId: parlRole.id
     };
     fs.writeFileSync(TICKET_CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
 
     // สร้างกล่องข้อความที่มีปุ่มให้เลือกประเภททิคเก็ต
     const embed = new EmbedBuilder()
       .setTitle('🎫 ศูนย์ติดต่อสอบถามและช่วยเหลือประชาชน')
-      .setDescription('โปรดเลือกหน่วยงานที่ต้องการติดต่อสื่อสาร\n\n🏛️ **ติดต่อรัฐบาล:** เรื่องกิจการบ้านเมือง, ร้องทุกข์ชาวบ้าน, ข้อเสนอนโยบาย, ขอพบรัฐมนตรี\n🛡️ **ติดต่อแอดมิน:** แจ้งบัคระบบ, ร้องเรียนผู้เล่นผิดกฎ, ปัญหาการเติมเงิน/เศรษฐกิจ')
+      .setDescription('โปรดเลือกหน่วยงานที่ต้องการติดต่อสื่อสาร\n\n🏛️ **ติดต่อรัฐบาล:** เรื่องกิจการบ้านเมือง, ร้องทุกข์ชาวบ้าน, ข้อเสนอนโยบาย, ขอพบรัฐมนตรี\n📜 **ติดต่อรัฐสภา:** เสนอกฎหมาย, ยื่นกระทู้ถาม, รายงานการประชุม\n🛡️ **ติดต่อแอดมิน:** แจ้งบัคระบบ, ร้องเรียนผู้เล่นผิดกฎ, ปัญหาการเติมเงิน/เศรษฐกิจ')
       .setColor('#2F3136')
       .setImage('https://media.discordapp.net/attachments/1113063853315842100/1152912423854284850/banner.png')
       .setFooter({ text: 'ระบบ Ticket แยกหน่วยงาน พร้อมให้บริการตลอด 24 ชั่วโมง' });
@@ -75,13 +88,19 @@ module.exports = {
       .setEmoji('🏛️')
       .setStyle(ButtonStyle.Primary);
 
+    const parlBtn = new ButtonBuilder()
+      .setCustomId('ticket_create_parl')
+      .setLabel('ติดต่อรัฐสภา')
+      .setEmoji('📜')
+      .setStyle(ButtonStyle.Success);
+
     const adminBtn = new ButtonBuilder()
       .setCustomId('ticket_create_admin')
       .setLabel('ติดต่อแอดมิน')
       .setEmoji('🛡️')
       .setStyle(ButtonStyle.Danger);
       
-    const row = new ActionRowBuilder().addComponents(govBtn, adminBtn);
+    const row = new ActionRowBuilder().addComponents(govBtn, parlBtn, adminBtn);
 
     await channel.send({ embeds: [embed], components: [row] });
     
@@ -90,7 +109,7 @@ module.exports = {
     await sendEconomyLog(
       interaction.client, 
       '🛠️ ตั้งค่าระบบ Ticket (แยกหน่วยงาน)', 
-      `**แอดมิน:** <@${interaction.user.id}>\n**ห้อง:** <#${channel.id}>\n**หมวดแอดมิน:** <#${adminCategory.id}>\n**หมวดรัฐบาล:** <#${govCategory.id}>`, 
+      `**แอดมิน:** <@${interaction.user.id}>\n**ห้อง:** <#${channel.id}>\n**หมวดแอดมิน:** <#${adminCategory.id}>\n**หมวดรัฐบาล:** <#${govCategory.id}>\n**หมวดรัฐสภา:** <#${parlCategory.id}>`, 
       'Blue', 
       false
     );

@@ -276,7 +276,7 @@ module.exports = {
 
 
       // ✅ ระบบ Ticket: กดปุ่มเปิดทิคเก็ต
-      if (interaction.isButton() && (interaction.customId === 'ticket_create' || interaction.customId === 'ticket_create_gov' || interaction.customId === 'ticket_create_admin')) {
+      if (interaction.isButton() && (interaction.customId === 'ticket_create' || interaction.customId === 'ticket_create_gov' || interaction.customId === 'ticket_create_admin' || interaction.customId === 'ticket_create_parl')) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
         
         const TICKET_CONFIG_FILE = path.join(__dirname, '..', 'data', 'ticket_config.json');
@@ -300,6 +300,12 @@ module.exports = {
           ticketPrefix = 'gov';
           ticketTitle = 'ติดต่อรัฐบาล (Government Contact)';
           ticketLabel = 'รัฐบาล';
+        } else if (interaction.customId === 'ticket_create_parl') {
+          targetRoleId = config.parlRoleId;
+          targetCategoryId = config.parlCategoryId;
+          ticketPrefix = 'parl';
+          ticketTitle = 'ติดต่อรัฐสภา (Parliament Contact)';
+          ticketLabel = 'รัฐสภา';
         }
 
         // ตรวจสอบว่า Category ยังมีอยู่จริงหรือไม่
