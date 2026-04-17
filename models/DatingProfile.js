@@ -9,6 +9,7 @@ const datingProfileSchema = new mongoose.Schema({
   extraInfo: { type: String, default: '' },
   likesReceived: [{ type: String }],
   likesGiven: [{ type: String }],
+  skipsGiven: [{ type: String }],
   matches: [{ type: String }],
   gender: { type: String, default: 'ไม่ระบุ' },
   lookingFor: { type: String, default: 'ไม่ระบุ' },

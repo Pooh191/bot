@@ -193,9 +193,16 @@ module.exports = async (interaction, client) => {
       // ❌ กดข้าม (Skip)
       if (customId.startsWith('dating_skip_')) {
         await interaction.deferUpdate().catch(() => {});
+        const skippedId = customId.split('_')[2];
         const searchMode = customId.split('_')[3] || 'all';
         const myProfile = await DatingProfile.findOne({ userId: interaction.user.id });
         
+        if (!myProfile.skipsGiven) myProfile.skipsGiven = [];
+        if (!myProfile.skipsGiven.includes(skippedId)) {
+          myProfile.skipsGiven.push(skippedId);
+          await myProfile.save();
+        }
+
         return await searchNextProfile(interaction, client, myProfile, searchMode === 'near' ? { province: myProfile.province } : {}, searchMode);
       }
 
@@ -376,11 +383,15 @@ module.exports = async (interaction, client) => {
 
 // ฟังก์ชันสำหรับค้นหาคนที่ยังไม่เห็น/ไม่ใช่ตัวเอง
 async function searchNextProfile(interaction, client, myProfile, qFilter = {}, searchMode = 'all') {
-  // หากลุ่มคนที่ไม่ใช่ตัวเอง, ไม่ใช่คนที่เคยกดไลค์ไปแล้ว, ไม่ใช่คนที่แมตช์แล้ว
+  // หากลุ่มคนที่ไม่ใช่ตัวเอง, ไม่ใช่คนที่เคยกดไลค์ไปแล้ว, ไม่ใช่คนที่ข้ามไปแล้ว, ไม่ใช่คนที่แมตช์แล้ว
+  const likes = myProfile.likesGiven || [];
+  const matches = myProfile.matches || [];
+  const skips = myProfile.skipsGiven || [];
+
   const query = {
     userId: { 
       $ne: myProfile.userId, 
-      $nin: [...myProfile.likesGiven, ...myProfile.matches] 
+      $nin: [...likes, ...matches, ...skips] 
     },
     ...qFilter
   };
