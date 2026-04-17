@@ -45,10 +45,6 @@ module.exports = {
       new ButtonBuilder()
         .setCustomId('dating_help')
         .setLabel('❓ วิธีใช้')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('dating_stats')
-        .setLabel('📊 ดูคนเล่นทั้งหมด')
         .setStyle(ButtonStyle.Secondary)
     );
 
