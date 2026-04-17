@@ -10,8 +10,8 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setColor('#ff479b') // สีชมพู
       .setTitle('💞 |หาเพื่อน | 77 จังหวัด')
-      .setImage('https://i.imgur.com/vHItuWn.png') // ใส่รูป Gradient สีชมพูเทา หรือเปลี่ยนได้ตามต้องการ
-      .setFooter({ text: `กดปุ่ม "วิธีใช้" เพื่อดูวิธีการใช้งาน • ระบบหาคู่` })
+      .setImage('https://media.discordapp.net/attachments/1113063853315842100/1152912423854284850/banner.png') // เปลี่ยนจากรูปลิงก์ที่พังเป็นแบนเนอร์ของระบบ
+      .setFooter({ text: `กดปุ่ม "วิธีใช้" เพื่อดูวิธีการใช้งาน • ระบบหาเพื่อน` })
       .setTimestamp();
 
     const row1 = new ActionRowBuilder().addComponents(
@@ -45,6 +45,10 @@ module.exports = {
       new ButtonBuilder()
         .setCustomId('dating_help')
         .setLabel('❓ วิธีใช้')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('dating_stats')
+        .setLabel('📊 ดูคนเล่นทั้งหมด')
         .setStyle(ButtonStyle.Secondary)
     );
 

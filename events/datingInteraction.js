@@ -149,6 +149,39 @@ module.exports = async (interaction, client) => {
         return true;
       }
 
+      // 📊 สถิติผู้ใช้งานทั้งหมด
+      if (customId === 'dating_stats') {
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+        const totalProfiles = await DatingProfile.countDocuments({});
+        
+        const totalMatchesList = await DatingProfile.find({}, 'matches');
+        let totalMatches = 0;
+        totalMatchesList.forEach(p => totalMatches += p.matches.length);
+        const realPairs = Math.floor(totalMatches / 2);
+
+        const provinceStats = await DatingProfile.aggregate([
+          { $group: { _id: "$province", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 5 }
+        ]);
+
+        const topProvincesText = provinceStats.map((p, i) => `${i+1}. ${p._id} (${p.count} คน)`).join('\n') || 'ไม่มีข้อมูล';
+
+        const embed = new EmbedBuilder()
+          .setColor('#ff479b')
+          .setTitle('📊 สถิติระบบหาคู่ 77 จังหวัด')
+          .addFields(
+            { name: '👥 ผู้ใช้งานทั้งหมด', value: `${totalProfiles} คน`, inline: true },
+            { name: '💞 คู่ที่แมตช์สำเร็จ', value: `${realPairs} คู่`, inline: true },
+            { name: '📍 5 อันดับจังหวัดที่คนเล่นยอะที่สุด', value: topProvincesText, inline: false }
+          )
+          .setFooter({ text: 'มาเป็นส่วนหนึ่งของสถิตินี้กันเถอะ!' })
+          .setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
+        return true;
+      }
+
       // ❓ วิธีใช้
       if (customId === 'dating_help') {
         const embed = new EmbedBuilder()
