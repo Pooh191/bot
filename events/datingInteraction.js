@@ -9,49 +9,26 @@ module.exports = async (interaction, client) => {
 
       // 📝 สมัคร/อัปเดต - ปุ่มสำหรับเรียกฟอร์ม
       if (customId === 'dating_register') {
-        const modal = new ModalBuilder()
-          .setCustomId('dating_register_modal')
-          .setTitle('📝 สมัคร/อัปเดตโปรไฟล์');
+        const { StringSelectMenuBuilder } = require('discord.js');
+        const provincesByRegion = require('../data/provincesByRegion');
 
-        const nicknameInput = new TextInputBuilder()
-          .setCustomId('dating_nickname')
-          .setLabel('ชื่อ/ชื่อเล่น ที่ใช้แสดง')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true);
+        const regionSelect = new StringSelectMenuBuilder()
+          .setCustomId('dating_region_select')
+          .setPlaceholder('กดยังที่นี่เพื่อเลือก "ภูมิภาค" ของคุณ')
+          .addOptions(
+            Object.keys(provincesByRegion).map(region => ({
+              label: region,
+              value: region
+            }))
+          );
 
-        const genderInput = new TextInputBuilder()
-          .setCustomId('dating_gender')
-          .setLabel('เพศ (ระบุเองได้เลย)')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true);
+        const row = new ActionRowBuilder().addComponents(regionSelect);
 
-        const provinceInput = new TextInputBuilder()
-          .setCustomId('dating_province')
-          .setLabel('จังหวัด')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true);
-
-        const fbInput = new TextInputBuilder()
-          .setCustomId('dating_fb')
-          .setLabel('Facebook / Contact')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(false);
-
-        const igInput = new TextInputBuilder()
-          .setCustomId('dating_ig')
-          .setLabel('Instagram')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(false);
-
-        modal.addComponents(
-          new ActionRowBuilder().addComponents(nicknameInput),
-          new ActionRowBuilder().addComponents(genderInput),
-          new ActionRowBuilder().addComponents(provinceInput),
-          new ActionRowBuilder().addComponents(fbInput),
-          new ActionRowBuilder().addComponents(igInput)
-        );
-
-        await interaction.showModal(modal);
+        await interaction.reply({
+          content: '📍 **ขั้นตอนที่ 1:** กรุณาเลือกภาคที่คุณอยู่ในประเทศไทย เพื่อค้นหาจังหวัดของคุณครับ',
+          components: [row],
+          flags: [MessageFlags.Ephemeral]
+        });
         return true;
       }
 
@@ -219,25 +196,86 @@ module.exports = async (interaction, client) => {
     }
 
 
+    // === 1.5 ตัวเลือกเมนูภูมิภาคและจังหวัด (String Select Menu) ===
+    if (interaction.isStringSelectMenu()) {
+      if (interaction.customId === 'dating_region_select') {
+        const selectedRegion = interaction.values[0];
+        const provincesByRegion = require('../data/provincesByRegion');
+        const provinces = provincesByRegion[selectedRegion];
+
+        const { StringSelectMenuBuilder } = require('discord.js');
+        const provinceSelect = new StringSelectMenuBuilder()
+          .setCustomId('dating_province_select')
+          .setPlaceholder(`เลือก "จังหวัด" ใน ${selectedRegion}`)
+          .addOptions(
+            provinces.map(prov => ({
+              label: prov,
+              value: prov
+            }))
+          );
+
+        const row = new ActionRowBuilder().addComponents(provinceSelect);
+
+        await interaction.update({
+          content: `📍 **ขั้นตอนที่ 2:** คุณเลือก ${selectedRegion} เรียบร้อยแล้ว\nกรุณากดเลือกจังหวัดของคุณจากเมนูด้านล่างนี้ครับ:`,
+          components: [row]
+        });
+        return true;
+      }
+
+      if (interaction.customId === 'dating_province_select') {
+        const selectedProvince = interaction.values[0];
+
+        // เด้ง Modal กรอกข้อมูลอื่นตามมา โดยแอบส่ง selectedProvince ไปใน customId
+        const modal = new ModalBuilder()
+          .setCustomId(`dating_register_modal_${selectedProvince}`)
+          .setTitle(`📝 สมัคร (จ.${selectedProvince})`);
+
+        const nicknameInput = new TextInputBuilder()
+          .setCustomId('dating_nickname')
+          .setLabel('ชื่อ/ชื่อเล่น ที่ใช้แสดง')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true);
+
+        const genderInput = new TextInputBuilder()
+          .setCustomId('dating_gender')
+          .setLabel('เพศ (ระบุเองได้เลย)')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true);
+
+        const fbInput = new TextInputBuilder()
+          .setCustomId('dating_fb')
+          .setLabel('Facebook / Contact')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(false);
+
+        const igInput = new TextInputBuilder()
+          .setCustomId('dating_ig')
+          .setLabel('Instagram')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(false);
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(nicknameInput),
+          new ActionRowBuilder().addComponents(genderInput),
+          new ActionRowBuilder().addComponents(fbInput),
+          new ActionRowBuilder().addComponents(igInput)
+        );
+
+        await interaction.showModal(modal);
+        return true;
+      }
+    }
+
+
     // === 2. แบบฟอร์ม Modal Submits ===
     if (interaction.isModalSubmit()) {
-      if (interaction.customId === 'dating_register_modal') {
+      if (interaction.customId.startsWith('dating_register_modal_')) {
+        const province = interaction.customId.replace('dating_register_modal_', '');
         const nickname = interaction.fields.getTextInputValue('dating_nickname');
         const gender = interaction.fields.getTextInputValue('dating_gender');
-        let province = interaction.fields.getTextInputValue('dating_province').trim();
         const facebook = interaction.fields.getTextInputValue('dating_fb') || '-';
         const ig = interaction.fields.getTextInputValue('dating_ig') || '-';
-
-        // จัดการลบคำว่า "จ." หรือ "จังหวัด" ออกถ้ามีเผื่อคนพิมพ์มา
-        province = province.replace(/^จ\.|^จังหวัด\s*|^จ\s+/, '').trim();
-        
-        const PROVINCES = require('../data/provinces');
-        if (!PROVINCES.includes(province)) {
-          return interaction.reply({ 
-            content: `❌ ระบบไม่พบชื่อจังหวัด **"${interaction.fields.getTextInputValue('dating_province')}"** ใน 77 จังหวัดประเทศไทยครับ\nกรุณากดสมัครใหม่และพิมพ์ชื่อจังหวัดให้ถูกต้อง เช่น \`กรุงเทพมหานคร\`, \`ชลบุรี\` (ไม่ต้องมีคำว่าจังหวัดนำหน้า)`, 
-            flags: [MessageFlags.Ephemeral] 
-          });
-        }
 
         let profile = await DatingProfile.findOne({ userId: interaction.user.id });
         if (!profile) {
