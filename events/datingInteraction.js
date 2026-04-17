@@ -142,7 +142,7 @@ module.exports = async (interaction, client) => {
         
         const embed = new EmbedBuilder()
           .setColor('#ff479b')
-          .setTitle('คนที่แอบปิ๊งคุณ! 💟')
+          .setTitle('คนที่สนใจคุณ! 💟')
           .setDescription(listText);
 
         await interaction.editReply({ embeds: [embed] });
@@ -313,7 +313,7 @@ async function searchNextProfile(interaction, client, myProfile, qFilter = {}, s
 
   const embed = new EmbedBuilder()
     .setColor('#ff479b')
-    .setTitle(`💖 ปิ๊งเขาเข้าแล้วรึเปล่า?`)
+    .setTitle(`💖 สนใจคนนี้รึเปล่า?`)
     .setDescription(`**${randomProfile.nickname}** (${randomProfile.gender})`)
     .addFields(
       { name: '📍 จังหวัด', value: randomProfile.province || 'ไม่ระบุ', inline: true },
