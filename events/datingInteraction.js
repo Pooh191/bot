@@ -63,7 +63,7 @@ module.exports = async (interaction, client) => {
 
         const lookingForInput = new TextInputBuilder()
           .setCustomId('dating_looking_for')
-          .setLabel('ความสัมพันธ์ที่ตามหา (เช่น แฟน, เพื่อน)')
+          .setLabel('เป้าหมายที่ตามหา (เช่น เพื่อนเล่นเกม, เพื่อนคุย)')
           .setStyle(TextInputStyle.Short)
           .setRequired(false);
 
@@ -153,7 +153,7 @@ module.exports = async (interaction, client) => {
       if (customId === 'dating_help') {
         const embed = new EmbedBuilder()
           .setColor('#808080')
-          .setTitle('❓ วิธีการใช้งานระบบหาคู่')
+          .setTitle('❓ วิธีการใช้งานระบบหาเพื่อน')
           .setDescription('1. กด **📝 สมัคร/อัปเดต** เพื่อตั้งค่าโปรไฟล์แรกเข้า\n2. กด **✨ ข้อมูลเสริม** เพื่อเพิ่ม Bio ให้น่าสนใจยิ่งขึ้น\n3. ใช้ปุ่ม **🧭 หาคนใกล้ฉัน** เพื่อสุ่มมองหาคนในจังหวัดเดียวกัน\n4. ใช้ปุ่ม **🏙️ หาคนในจังหวัด** เพื่อสุ่มข้ามจังหวัดทั่วประเทศ\n5. หากเจอคนที่ใช่ กด ❤️ ถูกใจ! ถ้าเขาถูกใจคุณกลับเช่นกัน บอทจะแจ้งเตือนทั้งสองฝ่ายเพื่อให้แลกคอนแทคกันนะ!');
         await interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
         return true;

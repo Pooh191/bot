@@ -4,7 +4,7 @@ const DatingProfile = require('../models/DatingProfile');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('datingclear')
-    .setDescription('🗑️ (Admin) ลบข้อมูลโปรไฟล์หาคู่ทั้งหมด (Reset Data)')
+    .setDescription('🗑️ (Admin) ลบข้อมูลโปรไฟล์หาเพื่อนทั้งหมด (Reset Data)')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addStringOption(option => 
       option.setName('confirm')
@@ -22,7 +22,7 @@ module.exports = {
 
     try {
       await DatingProfile.deleteMany({});
-      await interaction.editReply({ content: '✅ ลบข้อมูลโปรไฟล์หาคู่ที่ทดสอบค้างอยู่ **ทั้งหมด** เรียบร้อยแล้ว! (ตอนนี้ฐานข้อมูลว่างเปล่าครับ)' });
+      await interaction.editReply({ content: '✅ ลบข้อมูลโปรไฟล์หาเพื่อนที่ทดสอบค้างอยู่ **ทั้งหมด** เรียบร้อยแล้ว! (ตอนนี้ฐานข้อมูลว่างเปล่าครับ)' });
     } catch (err) {
       console.error(err);
       await interaction.editReply({ content: '❌ เกิดข้อผิดพลาดในการลบข้อมูล' });

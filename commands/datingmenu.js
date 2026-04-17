@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('datingmenu')
-    .setDescription('💕 สร้างเมนูระบบหาคู่ หาเพื่อน 77 จังหวัด (Admin Only)')
+    .setDescription('💕 สร้างเมนูระบบหาเพื่อน 77 จังหวัด (Admin Only)')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
@@ -49,6 +49,6 @@ module.exports = {
     );
 
     await interaction.channel.send({ embeds: [embed], components: [row1, row2] });
-    await interaction.reply({ content: '✅ สร้างหน้าต่างเมนูระบบหาคู่เรียบร้อยครับ', ephemeral: true });
+    await interaction.reply({ content: '✅ สร้างหน้าต่างเมนูระบบหาเพื่อนเรียบร้อยครับ', ephemeral: true });
   }
 };

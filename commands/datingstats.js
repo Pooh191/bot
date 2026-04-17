@@ -4,7 +4,7 @@ const DatingProfile = require('../models/DatingProfile');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('datingstats')
-    .setDescription('📊 (Admin) ดูสถิติและจำนวนคนเล่นระบบหาคู่')
+    .setDescription('📊 (Admin) ดูสถิติและจำนวนคนเล่นระบบหาเพื่อน')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
@@ -31,7 +31,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor('#ff479b')
-        .setTitle('📊 ข้อมูลสถิติผู้ใช้งานระบบหาคู่')
+        .setTitle('📊 ข้อมูลสถิติผู้ใช้งานระบบหาเพื่อน')
         .addFields(
           { name: '👥 ผู้ใช้งานทั้งหมด', value: `${totalProfiles} คน`, inline: true },
           { name: '💞 คู่ที่แมตช์สำเร็จ', value: `${realPairs} คู่`, inline: true },

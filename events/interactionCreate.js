@@ -22,7 +22,7 @@ module.exports = {
   name: 'interactionCreate',
   async execute(interaction, client) {
     try {
-      // ✅ ระบบหาคู่ (Dating App)
+      // ✅ ระบบหาเพื่อน (Friend Finder)
       const datingHandlers = require('./datingInteraction');
       if (await datingHandlers(interaction, client)) return;
 
