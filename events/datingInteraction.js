@@ -40,7 +40,7 @@ module.exports = async (interaction, client) => {
 
         const lookingForInput = new TextInputBuilder()
           .setCustomId('dating_looking_for')
-          .setLabel('เป้าหมายที่ตามหา (เช่น เพื่อนเล่นเกม, เพื่อนคุย)')
+          .setLabel('เป้าหมายที่ตามหา (เช่น หาเพื่อนเล่นเกม)')
           .setStyle(TextInputStyle.Short)
           .setRequired(false);
 
