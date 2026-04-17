@@ -22,6 +22,10 @@ module.exports = {
   name: 'interactionCreate',
   async execute(interaction, client) {
     try {
+      // ✅ ระบบหาคู่ (Dating App)
+      const datingHandlers = require('./datingInteraction');
+      if (await datingHandlers(interaction, client)) return;
+
       // ✅ ปุ่มขอสัญชาติ
       if (interaction.isButton() && interaction.customId === 'citizen_request') {
         const modal = new ModalBuilder()
