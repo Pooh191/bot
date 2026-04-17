@@ -160,26 +160,31 @@ module.exports = async (interaction, client) => {
           await targetProfile.save();
         }
 
-        // เช็คว่าแมตช์ไหม?
-        if (targetProfile.likesGiven.includes(interaction.user.id)) {
-          // แมตช์กัน!
-          if (!myProfile.matches.includes(targetId)) myProfile.matches.push(targetId);
-          if (!targetProfile.matches.includes(interaction.user.id)) targetProfile.matches.push(interaction.user.id);
-          await myProfile.save();
-          await targetProfile.save();
-
-          // ส่ง DM หาทั้งคู่
-          try {
-            const embedMe = new EmbedBuilder().setColor('Green').setTitle('🎉 อิตส์ อะ แมตช์! You have a Match!').setDescription(`คุณได้แมตช์กับ **${targetProfile.nickname}**!\nลองทักทายกันดูได้ที่ <@${targetId}> หรือช่องทาง: FB: ${targetProfile.facebook}, IG: ${targetProfile.instagram}`);
-            const embedThem = new EmbedBuilder().setColor('Green').setTitle('🎉 อิตส์ อะ แมตช์! You have a Match!').setDescription(`คุณได้แมตช์กับ **${myProfile.nickname}**!\nลองทักทายกันดูได้ที่ <@${interaction.user.id}> หรือช่องทาง: FB: ${myProfile.facebook}, IG: ${myProfile.instagram}`);
+        // ส่ง DM หาทั้งคู่แบบระบบ Request / Accept
+        try {
+          const targetDiscordUser = await client.users.fetch(targetId);
+          if (targetDiscordUser) {
+            const embed = new EmbedBuilder()
+              .setColor('#ff479b')
+              .setTitle('💌 มีคำขอเป็นเพื่อนใหม่ส่งถึงคุณ!')
+              .setDescription(`ผู้เล่น **${myProfile.nickname}** (จ.${myProfile.province}) มีความสนใจอยากเป็นเพื่อนกับคุณ!\n\nเป้าหมายของเขา: ${myProfile.lookingFor || '-'}\n\nกดปุ่มด้านล่างเพื่อตัดสินใจ:`);
             
-            await interaction.user.send({ embeds: [embedMe] }).catch(() => {});
-            const targetDiscordUser = await client.users.fetch(targetId).catch(() => {});
-            if (targetDiscordUser) await targetDiscordUser.send({ embeds: [embedThem] }).catch(() => {});
-          } catch (e) {}
+            const btnRow = new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId(`dating_accept_${interaction.user.id}`)
+                .setLabel('✅ ยอมรับ')
+                .setStyle(ButtonStyle.Success),
+              new ButtonBuilder()
+                .setCustomId(`dating_reject_${interaction.user.id}`)
+                .setLabel('❌ ไม่ยอมรับ')
+                .setStyle(ButtonStyle.Danger)
+            );
 
-          await interaction.followUp({ content: `🎉 **It's a Match!** คุณแมตช์กับ <@${targetId}> เราได้ส่งข้อมูลลง DM แล้ว!`, flags: [MessageFlags.Ephemeral] });
-        }
+            await targetDiscordUser.send({ embeds: [embed], components: [btnRow] }).catch(() => {});
+          }
+        } catch (e) {}
+
+        await interaction.followUp({ content: `💌 **ส่งคำขอสำเร็จ!** ระบบได้ทำการส่งคำขอไปยัง <@${targetId}> แล้ว รอให้เขาตอบรับนะ!`, flags: [MessageFlags.Ephemeral] });
 
         // โหลดโปรไฟล์ถัดไป (หาใหม่)
         return await searchNextProfile(interaction, client, myProfile, searchMode === 'near' ? { province: myProfile.province } : {}, searchMode);
@@ -192,6 +197,57 @@ module.exports = async (interaction, client) => {
         const myProfile = await DatingProfile.findOne({ userId: interaction.user.id });
         
         return await searchNextProfile(interaction, client, myProfile, searchMode === 'near' ? { province: myProfile.province } : {}, searchMode);
+      }
+
+      // ✅ กดยอมรับคำขอเป็นเพื่อนผ่าน DM
+      if (customId.startsWith('dating_accept_')) {
+        await interaction.deferUpdate().catch(() => {});
+        const requesterId = customId.split('_')[2];
+        const myProfile = await DatingProfile.findOne({ userId: interaction.user.id });
+        const requesterProfile = await DatingProfile.findOne({ userId: requesterId });
+
+        if (!myProfile || !requesterProfile) return;
+
+        // เติมลงใน Matches
+        if (!myProfile.matches.includes(requesterId)) myProfile.matches.push(requesterId);
+        if (!requesterProfile.matches.includes(interaction.user.id)) requesterProfile.matches.push(interaction.user.id);
+        
+        await myProfile.save();
+        await requesterProfile.save();
+
+        // เปลี่ยนแก้ข้อความใน DM ตัวเอง
+        const updatedEmbed = new EmbedBuilder()
+          .setColor('Green')
+          .setTitle('✅ คุณยอมรับคำขอเป็นเพื่อนสำเร็จแล้ว!')
+          .setDescription(`คุณได้ตอบรับเป็นเพื่อนกับ **${requesterProfile.nickname}** เรียบร้อย!\nติดต่อเขาได้ที่ช่องทางต่อไปนี้:\n**Facebook:** ${requesterProfile.facebook}\n**Instagram:** ${requesterProfile.instagram}`);
+        
+        await interaction.editReply({ embeds: [updatedEmbed], components: [] }).catch(() => {});
+
+        // แจ้งเตือนไปยังฝั่งคนขอ
+        try {
+          const reqDiscordUser = await client.users.fetch(requesterId);
+          if (reqDiscordUser) {
+            const notifEmbed = new EmbedBuilder()
+              .setColor('Green')
+              .setTitle('🎉 มีคนยอมรับคำขอเป็นเพื่อนของคุณแล้ว!')
+              .setDescription(`**${myProfile.nickname}** ยอมรับคำขอเป็นเพื่อนของคุณแล้ว!\nลองทักทายเขาดูได้ที่ช่องทางต่อไปนี้:\n**Facebook:** ${myProfile.facebook}\n**Instagram:** ${myProfile.instagram}`);
+            await reqDiscordUser.send({ embeds: [notifEmbed] }).catch(() => {});
+          }
+        } catch (e) {}
+
+        return true;
+      }
+
+      // ❌ กดปฏิเสธคำขอเป็นเพื่อนผ่าน DM
+      if (customId.startsWith('dating_reject_')) {
+        await interaction.deferUpdate().catch(() => {});
+        const updatedEmbed = new EmbedBuilder()
+          .setColor('Red')
+          .setTitle('❌ ไม่ยอมรับคำขอ')
+          .setDescription('คุณได้ปฏิเสธคำขอเป็นเพื่อนจากผู้เล่นท่านนี้เรียบร้อยแล้ว');
+        
+        await interaction.editReply({ embeds: [updatedEmbed], components: [] }).catch(() => {});
+        return true;
       }
     }
 
