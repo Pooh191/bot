@@ -224,9 +224,20 @@ module.exports = async (interaction, client) => {
       if (interaction.customId === 'dating_register_modal') {
         const nickname = interaction.fields.getTextInputValue('dating_nickname');
         const gender = interaction.fields.getTextInputValue('dating_gender');
-        const province = interaction.fields.getTextInputValue('dating_province');
+        let province = interaction.fields.getTextInputValue('dating_province').trim();
         const facebook = interaction.fields.getTextInputValue('dating_fb') || '-';
         const ig = interaction.fields.getTextInputValue('dating_ig') || '-';
+
+        // จัดการลบคำว่า "จ." หรือ "จังหวัด" ออกถ้ามีเผื่อคนพิมพ์มา
+        province = province.replace(/^จ\.|^จังหวัด\s*|^จ\s+/, '').trim();
+        
+        const PROVINCES = require('../data/provinces');
+        if (!PROVINCES.includes(province)) {
+          return interaction.reply({ 
+            content: `❌ ระบบไม่พบชื่อจังหวัด **"${interaction.fields.getTextInputValue('dating_province')}"** ใน 77 จังหวัดประเทศไทยครับ\nกรุณากดสมัครใหม่และพิมพ์ชื่อจังหวัดให้ถูกต้อง เช่น \`กรุงเทพมหานคร\`, \`ชลบุรี\` (ไม่ต้องมีคำว่าจังหวัดนำหน้า)`, 
+            flags: [MessageFlags.Ephemeral] 
+          });
+        }
 
         let profile = await DatingProfile.findOne({ userId: interaction.user.id });
         if (!profile) {
