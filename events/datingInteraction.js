@@ -75,8 +75,6 @@ module.exports = async (interaction, client) => {
             { name: 'เพศ', value: profile.gender || 'ไม่ระบุ', inline: true },
             { name: 'จังหวัด', value: profile.province || 'ไม่ระบุ', inline: true },
             { name: 'กำลังมองหา', value: profile.lookingFor || 'ไม่ระบุ', inline: true },
-            { name: 'Facebook', value: profile.facebook || '-', inline: true },
-            { name: 'Instagram', value: profile.instagram || '-', inline: true },
             { name: '📝 แนะนำตัว (Bio)', value: profile.extraInfo || 'ยังไม่ได้เขียนอะไรเพิ่มเติม', inline: false },
             { name: '💞 สถิติ', value: `คนกดถูกใจคุณ: ${profile.likesReceived.length} | กดถูกใจไปแล้ว: ${profile.likesGiven.length} | แมตช์แล้ว: ${profile.matches.length}`, inline: false }
           )
@@ -129,9 +127,17 @@ module.exports = async (interaction, client) => {
       // ❓ วิธีใช้
       if (customId === 'dating_help') {
         const embed = new EmbedBuilder()
-          .setColor('#808080')
-          .setTitle('❓ วิธีการใช้งานระบบหาเพื่อน')
-          .setDescription('1. กด **📝 สมัคร/อัปเดต** เพื่อตั้งค่าโปรไฟล์แรกเข้า\n2. กด **✨ ข้อมูลเสริม** เพื่อเพิ่ม Bio ให้น่าสนใจยิ่งขึ้น\n3. ใช้ปุ่ม **🧭 หาคนใกล้ฉัน** เพื่อสุ่มมองหาคนในจังหวัดเดียวกัน\n4. ใช้ปุ่ม **🏙️ หาคนในจังหวัด** เพื่อสุ่มข้ามจังหวัดทั่วประเทศ\n5. หากเจอคนที่ใช่ กด ❤️ ถูกใจ! ถ้าเขาถูกใจคุณกลับเช่นกัน บอทจะแจ้งเตือนทั้งสองฝ่ายเพื่อให้แลกคอนแทคกันนะ!');
+          .setColor('#00b0f4')
+          .setTitle('📖 คู่มือและวิธีการใช้งานระบบหาเพื่อน (Friend Finder)')
+          .setDescription('ยินดีต้อนรับสู่ระบบหาเพื่อนเล่นเกมและพูดคุย! นี่คือขั้นตอนการใช้งานทั้งหมดเพื่อให้คุณได้รู้จักเพื่อนใหม่ๆ แบบปลอดภัยตามกฎของ Discord ครับ')
+          .addFields(
+            { name: '📝 ขั้นที่ 1: สร้างโปรไฟล์ของคุณ', value: 'กดปุ่ม **📝 สมัคร/อัปเดต** เพื่อเลือกจังหวัดที่คุณอยู่ จากนั้นตั้งชื่อและเพศของคุณ\nต่อมาแนะนำให้กดปุ่ม **✨ ข้อมูลเสริม** เพื่อเขียน Bio แนะนำตัวสั้นๆ และบอกเป้าหมาย (เช่น หาคนแบกแรงค์, หาเพื่อนคุย)' },
+            { name: '🔍 ขั้นที่ 2: เริ่มค้นหาเพื่อนใหม่', value: '• **🧭 หาคนใกล้ฉัน:** ระบบจะสุ่มโปรไฟล์ของคนที่อยู่ "จังหวัดเดียวกับคุณ" ขึ้นมาให้\n• **🏙️ หาคนในจังหวัด:** ระบบจะสุ่มโปรไฟล์ของคนจาก "ทุกจังหวัดทั่วประเทศ" ขึ้นมา' },
+            { name: '❤️ ขั้นที่ 3: ส่งคำขอเป็นเพื่อน', value: 'เมื่อเจอคนที่สนใจจังหวะนี้ ให้กดปุ่ม **❤️ ถูกใจ** บอทจะนำส่งคำขอไปหาเขาในแชท DM ส่วนตัวทันที (ถ้ายังไม่โดนใจ ใคร่ขอข้ามให้กดปุ่ม **❌ ข้าม** เพื่อดูคนต่อไป)' },
+            { name: '🎉 ขั้นที่ 4: การแมตช์สำเร็จ (Match!)', value: 'หากคนที่คุณส่งคำขอไปนั้น **กดยอมรับ** บอทแจ้งเตือนทั้งสองฝ่าย พร้อมมอบช่องทางติดต่อ **ผ่านแท็ก Discord (@)** เพื่อให้คุณทัก Direct Message หายันอย่างปลอดภัย โดยไม่ต้องแลกบัญชีภายนอกใดๆ' },
+            { name: '⚠️ กฎความปลอดภัย (Discord Community Guidelines)', value: 'เพื่อความปลอดภัยที่รัดกุมตามนโยบายของ Discord โปรดปฏิบัติตามนี้:\n1. **ห้ามแชร์ข้อมูลที่ระบุตัวตนได้ (PII):** ห้ามบอกบ้านเลขที่, เบอร์โทรศัพท์, หรือชื่อ-นามสกุลจริง\n2. **พื้นที่ปลอดภัย 100%:** ระบบนี้มีไว้เพื่อให้คุณหาเพื่อน ห้ามส่งเนื้อหาลามกอนาจาร (NSFW) หรือก่อกวนคุกคามคุกคามใดๆ ขัดต่อกฎสากล (Harassment/Doxxing)\n3. หากเจอคนคุกคามสามารถใช้เครื่องมือ Block และ Report ของ Discord ได้เสมอ' }
+          )
+          .setFooter({ text: 'ขอให้สนุกกับการสร้างสังคมใหม่นะครับ!' });
         await interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
         return true;
       }
@@ -226,7 +232,7 @@ module.exports = async (interaction, client) => {
         const updatedEmbed = new EmbedBuilder()
           .setColor('Green')
           .setTitle('✅ คุณยอมรับคำขอเป็นเพื่อนสำเร็จแล้ว!')
-          .setDescription(`คุณได้ตอบรับเป็นเพื่อนกับ **${requesterProfile.nickname}** เรียบร้อย!\nติดต่อเขาได้ที่ช่องทางต่อไปนี้:\n**Facebook:** ${requesterProfile.facebook}\n**Instagram:** ${requesterProfile.instagram}`);
+          .setDescription(`คุณได้ตอบรับเป็นเพื่อนกับ **${requesterProfile.nickname}** เรียบร้อย!\nตามนโยบายความเป็นส่วนตัว คุณสามารถปิงหรือเริ่มต้นพูดคุยกับเขาได้ผ่าน Discord โดยไม่ต้องใช้ข้อมูลภายนอก:\n👉 <@${requesterId}>`);
         
         await interaction.editReply({ embeds: [updatedEmbed], components: [] }).catch(() => {});
 
@@ -237,7 +243,7 @@ module.exports = async (interaction, client) => {
             const notifEmbed = new EmbedBuilder()
               .setColor('Green')
               .setTitle('🎉 มีคนยอมรับคำขอเป็นเพื่อนของคุณแล้ว!')
-              .setDescription(`**${myProfile.nickname}** ยอมรับคำขอเป็นเพื่อนของคุณแล้ว!\nลองทักทายเขาดูได้ที่ช่องทางต่อไปนี้:\n**Facebook:** ${myProfile.facebook}\n**Instagram:** ${myProfile.instagram}`);
+              .setDescription(`**${myProfile.nickname}** ยอมรับคำขอเป็นเพื่อนของคุณแล้ว!\nคุณสามารถทักทายเพื่อนใหม่ผ่านการ DM บนแพลตฟอร์ม Discord ได้เลย:\n👉 <@${interaction.user.id}>`);
             await reqDiscordUser.send({ embeds: [notifEmbed] }).catch(() => {});
           }
         } catch (e) {}
@@ -306,23 +312,9 @@ module.exports = async (interaction, client) => {
           .setStyle(TextInputStyle.Short)
           .setRequired(true);
 
-        const fbInput = new TextInputBuilder()
-          .setCustomId('dating_fb')
-          .setLabel('Facebook / Contact')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(false);
-
-        const igInput = new TextInputBuilder()
-          .setCustomId('dating_ig')
-          .setLabel('Instagram')
-          .setStyle(TextInputStyle.Short)
-          .setRequired(false);
-
         modal.addComponents(
           new ActionRowBuilder().addComponents(nicknameInput),
-          new ActionRowBuilder().addComponents(genderInput),
-          new ActionRowBuilder().addComponents(fbInput),
-          new ActionRowBuilder().addComponents(igInput)
+          new ActionRowBuilder().addComponents(genderInput)
         );
 
         await interaction.showModal(modal);
@@ -337,8 +329,6 @@ module.exports = async (interaction, client) => {
         const province = interaction.customId.replace('dating_register_modal_', '');
         const nickname = interaction.fields.getTextInputValue('dating_nickname');
         const gender = interaction.fields.getTextInputValue('dating_gender');
-        const facebook = interaction.fields.getTextInputValue('dating_fb') || '-';
-        const ig = interaction.fields.getTextInputValue('dating_ig') || '-';
 
         let profile = await DatingProfile.findOne({ userId: interaction.user.id });
         if (!profile) {
@@ -347,8 +337,6 @@ module.exports = async (interaction, client) => {
         profile.nickname = nickname;
         profile.gender = gender;
         profile.province = province;
-        profile.facebook = facebook;
-        profile.instagram = ig;
         
         await profile.save();
 
