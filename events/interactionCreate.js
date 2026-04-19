@@ -308,10 +308,15 @@ module.exports = {
           ticketLabel = 'รัฐสภา';
         }
 
-        // ตรวจสอบว่า Category ยังมีอยู่จริงหรือไม่
-        const category = interaction.guild.channels.cache.get(targetCategoryId);
-        if (!category) {
-          return interaction.editReply({ content: `❌ ไม่พบหมวดหมู่ของ${ticketLabel}ที่ตั้งค่าไว้ (อาจถูกลบไปแล้วหรือยังไม่ได้รับการตั้งค่า) กรุณาให้แอดมินใช้คำสั่ง /setupticket ใหม่อีกครั้ง` });
+        // ตรวจสอบความถูกต้องของ ID จาก Config
+        if (!targetCategoryId) {
+          return interaction.editReply({ content: `❌ ข้อมูลหมวดหมู่ของ **${ticketLabel}** ไม่ถูกระบุในไฟล์ตั้งค่า กรุณาให้แอดมินเริ่มใช้คำสั่ง \`/setupticket\` เพื่อบันทึกข้อมูลใหม่ครับ` });
+        }
+
+        // ตรวจสอบว่า Category ยังมีอยู่จริงหรือไม่ (ใช้ fetch เพื่อความแม่นยำ)
+        const category = await interaction.guild.channels.fetch(targetCategoryId).catch(() => null);
+        if (!category || category.type !== ChannelType.GuildCategory) {
+          return interaction.editReply({ content: `❌ ไม่พบหมวดหมู่ของ **${ticketLabel}** ที่ตั้งค่าไว้ (อาจถูกลบไปแล้วหรือ ID ไม่ถูกต้อง) กรุณาให้แอดมินใช้คำสั่ง \`/setupticket\` ใหม่อีกครั้ง` });
         }
 
         // ตรวจสอบห้องเดิมที่มีอยู่แล้วในหมวดหมู่นั้นๆ
