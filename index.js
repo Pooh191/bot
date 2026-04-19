@@ -378,4 +378,43 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
   }
 });
 
+// Admin Log: Invite Changes
+client.on('inviteCreate', invite => {
+  sendEconomyLog(client, '🔗 สร้างคำเชิญใหม่ (Invite Created)', `**โค้ด:** ${invite.code}\n**ผู้สร้าง:** <@${invite.inviterId}>\n**ห้อง:** <#${invite.channelId}>\n**หมดอายุ:** ${invite.maxAge === 0 ? 'ไม่มีวันหมดอายุ' : `${invite.maxAge} วินาที`}`, 'LightGrey', false);
+});
+
+client.on('inviteDelete', invite => {
+  sendEconomyLog(client, '🔗 ลบคำเชิญ (Invite Deleted)', `**โค้ด:** ${invite.code}\n**ห้อง:** <#${invite.channelId}>`, 'Grey', false);
+});
+
+// Admin Log: Emoji & Sticker Changes
+client.on('emojiCreate', emoji => {
+  sendEconomyLog(client, '😀 เพิ่ม Emoji ใหม่', `**ชื่อ:** :${emoji.name}:\n**รูป:** ${emoji.url}`, 'Green', false);
+});
+
+client.on('emojiDelete', emoji => {
+  sendEconomyLog(client, '🗑️ ลบ Emoji', `**ชื่อ:** :${emoji.name}:`, 'Red', false);
+});
+
+client.on('stickerCreate', sticker => {
+  sendEconomyLog(client, '🖼️ เพิ่ม Sticker ใหม่', `**ชื่อ:** ${sticker.name}\n**รูป:** ${sticker.url}`, 'Green', false);
+});
+
+client.on('stickerDelete', sticker => {
+  sendEconomyLog(client, '🗑️ ลบ Sticker', `**ชื่อ:** ${sticker.name}`, 'Red', false);
+});
+
+// Admin Log: Member Kick/Ban/Timeout (Checking Audit Logs)
+client.on('guildAuditLogEntryCreate', async (auditLog) => {
+  const { action, executorId, targetId, reason } = auditLog;
+  
+  if (action === 20) { // Member Kick
+    sendEconomyLog(client, '👢 การแตะออก (Member Kicked)', `**ผู้ถูกเตะ:** <@${targetId}>\n**ผู้สั่งการ:** <@${executorId}>\n**เหตุผล:** ${reason || 'ไม่ระบุ'}`, 'Orange', false);
+  } else if (action === 22) { // Member Ban Add
+    sendEconomyLog(client, '🔨 การแบน (Member Banned)', `**ผู้ถูกแบน:** <@${targetId}>\n**ผู้สั่งการ:** <@${executorId}>\n**เหตุผล:** ${reason || 'ไม่ระบุ'}`, 'DarkRed', false);
+  } else if (action === 24) { // Member Timeout Add
+    sendEconomyLog(client, '🔇 การลดบทบาท (Timeout Added)', `**ผู้ถูกลงโทษ:** <@${targetId}>\n**ผู้สั่งการ:** <@${executorId}>\n**เหตุผล:** ${reason || 'ไม่ระบุ'}`, 'Grey', false);
+  }
+});
+
 

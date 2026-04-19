@@ -370,8 +370,10 @@ module.exports = {
           const row = new ActionRowBuilder().addComponents(closeBtn);
 
           await newChannel.send({ content: `<@${interaction.user.id}> | <@&${targetRoleId}>`, embeds: [embed], components: [row] });
-
           await interaction.editReply({ content: `✅ สร้างห้องทิคเก็ต${ticketLabel}สำเร็จแล้ว! ไปที่ <#${newChannel.id}> ได้เลยครับ` });
+
+          // ✅ Log ticket creation
+          sendEconomyLog(client, '🎫 เปิดทิคเก็ตใหม่ (Ticket Created)', `**ผู้เปิด:** <@${interaction.user.id}>\n**ประเภท:** ${ticketLabel}\n**ห้องพูดคุย:** <#${newChannel.id}>`, 'Aqua', false);
         } catch (error) {
           console.error('Error creating ticket channel:', error);
           await interaction.editReply({ content: '❌ เกิดข้อผิดพลาดในการสร้างห้องทิคเก็ต' });

@@ -1,5 +1,6 @@
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const DatingProfile = require('../models/DatingProfile');
+const { sendEconomyLog } = require('../utils/logger');
 
 module.exports = async (interaction, client) => {
   try {
@@ -248,6 +249,9 @@ module.exports = async (interaction, client) => {
           }
         } catch (e) {}
 
+        // ✅ Log Successful Match
+        sendEconomyLog(client, '💞 แมตช์สำเร็จ (Friend Match!)', `**ผู้เล่น 1:** <@${interaction.user.id}>\n**ผู้เล่น 2:** <@${requesterId}>\nทั้งคู่ได้รับช่องทางติดต่อกันเรียบร้อยแล้ว`, 'LuminousVividPink', false);
+
         return true;
       }
 
@@ -341,6 +345,10 @@ module.exports = async (interaction, client) => {
         await profile.save();
 
         await interaction.reply({ content: '✅ เซฟโปรไฟล์เรียบร้อย! สามารถเพิ่มข้อมูลเสริมหรือเริ่มหาคนได้เลย!', flags: [MessageFlags.Ephemeral] });
+
+        // ✅ Log Profile Update
+        sendEconomyLog(client, '📝 อัปเดตโปรไฟล์หาเพื่อน', `**ผู้ใช้:** <@${interaction.user.id}>\n**ชื่อแฝง:** ${nickname}\n**จังหวัด:** ${province}\n**เพศ:** ${gender}`, 'Orange', false);
+
         return true;
       }
 
