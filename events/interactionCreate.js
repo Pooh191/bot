@@ -26,6 +26,10 @@ module.exports = {
       const datingHandlers = require('./datingInteraction');
       if (await datingHandlers(interaction, client)) return;
 
+      // ✅ ระบบสลากกินแบ่งรัฐบาล (Lotto)
+      const lottoHandlers = require('./lottoInteraction');
+      if (await lottoHandlers(interaction, client)) return;
+
       // ✅ ปุ่มขอสัญชาติ
       if (interaction.isButton() && interaction.customId === 'citizen_request') {
         const modal = new ModalBuilder()

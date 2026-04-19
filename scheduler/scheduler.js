@@ -246,6 +246,24 @@ const scheduleMessageJob = new CronJob('* * * * *', async () => {
   }
 }, null, true, 'Asia/Bangkok');
 
+// ระบบแจ้งเตือนการออกรางวัลสลากกินแบ่งรัฐบาล (ทุกวันที่ 5 และ 20 เวลา 17:30)
+const lottoReminderJob = new CronJob('30 17 5,20 * *', async () => {
+  const guild = clientRef.guilds.cache.first();
+  if (!guild) return;
+
+  const adminChannelId = process.env.ADMIN_LOG_CHANNEL_ID;
+  const channel = guild.channels.cache.get(adminChannelId);
+  
+  if (channel) {
+    const embed = new EmbedBuilder()
+      .setTitle('📢 การแจ้งเตือนแอดมิน: ถึงเวลาปิดการขายและเตรียมออกรางวัล')
+      .setColor('Orange')
+      .setDescription(`ขณะนี้เวลา 17:30 น. ของวันที่กำหนดออกรางวัล\nระบบได้ทำการปิดการขายสลากกินแบ่งแล้ว\n\nกรุณาเตรียมตัวถ่ายทอดสดและใช้คำสั่ง \`/lottoadmin draw\` ในเวลา 18:30 น. เพื่อประกาศผลรางวัลครับ`)
+      .setTimestamp();
+    await channel.send({ content: '@everyone', embeds: [embed] });
+  }
+}, null, true, 'Asia/Bangkok');
+
 const scheduleAll = (client) => {
   clientRef = client;
   taxJob.start();
@@ -253,6 +271,7 @@ const scheduleAll = (client) => {
   loanInterestJob.start();
   allowanceJob.start();
   scheduleMessageJob.start();
+  lottoReminderJob.start();
 };
 
 module.exports = { scheduleAll };
