@@ -21,7 +21,7 @@ module.exports = {
       opt.setName('amount')
         .setDescription('จำนวนใบที่ต้องการซื้อ (ไม่เกิน 10 ใบ)')
         .setMinValue(1)
-        .setMax(10)
+        .setMaxValue(10)
         .setRequired(true)),
 
   async execute(interaction) {
