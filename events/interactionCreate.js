@@ -400,10 +400,20 @@ module.exports = {
 
       // ✅ ระบบ Ticket: ยืนยันปิดทิคเก็ต
       if (interaction.isButton() && interaction.customId === 'ticket_close_confirm') {
-        await interaction.reply({ content: '🗑️ กำลังลบห้องในอีก 5 วินาที...' });
+        const ticketOwner = interaction.channel.name.split('-')[1] || 'ไม่ทราบชื่อ';
+
+        // ปิดปุ่มกดซ้ำ
+        await interaction.update({ 
+          content: '🗑️ **ได้รับการยืนยัน:** กำลังลบห้องทิคเก็ตนี้ในอีก 5 วินาที...', 
+          components: [] 
+        }).catch(() => {});
+
+        // ✅ Log ticket closure
+        sendEconomyLog(client, '🔒 ปิดทิคเก็ต (Ticket Closed)', `**ผู้สั่งปิด:** <@${interaction.user.id}>\n**ห้องที่ถูกลบ:** ${interaction.channel.name}\n**เจ้าของทิคเก็ตเดิม:** ${ticketOwner}`, 'Grey', false);
+
         setTimeout(() => {
           if (interaction.channel) {
-              interaction.channel.delete().catch(console.error);
+              interaction.channel.delete().catch(() => {});
           }
         }, 5000);
         return;
