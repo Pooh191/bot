@@ -1,5 +1,6 @@
 const { JWT } = require('google-auth-library');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
+const moment = require('moment-timezone');
 
 async function syncLottoToSheet(dataType, data) {
   try {
@@ -8,7 +9,7 @@ async function syncLottoToSheet(dataType, data) {
     const sheetId = process.env.LOTTO_SHEET_ID;
 
     if (!serviceAccountEmail || !privateKey || !sheetId) {
-      console.warn('⚠️ Google Sheets credentials not configured. Skipping sync.');
+      console.warn('⚠️ Google Sheets Sync skipped: missing config in .env');
       return;
     }
 
@@ -23,15 +24,26 @@ async function syncLottoToSheet(dataType, data) {
 
     let sheet;
     if (dataType === 'purchases') {
-      sheet = doc.sheetsByTitle['Purchases'] || await doc.addSheet({ title: 'Purchases', headerValues: ['Date', 'User', 'Numbers', 'Status'] });
+      const title = 'Purchases';
+      sheet = doc.sheetsByTitle[title];
+      if (!sheet) {
+        sheet = await doc.addSheet({ title, headerValues: ['Date', 'User', 'Numbers', 'Status'] });
+      }
+      
       await sheet.addRow({
-        Date: new Date().toISOString(),
+        Date: moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss'),
         User: data.username || data.userId,
         Numbers: data.numbers.join(', '),
         Status: 'Purchased'
       });
+      console.log('✅ Synced purchase to Google Sheet successfully');
     } else if (dataType === 'results') {
-      sheet = doc.sheetsByTitle['Results'] || await doc.addSheet({ title: 'Results', headerValues: ['DrawDate', 'Award', 'Numbers'] });
+      const title = 'Results';
+      sheet = doc.sheetsByTitle[title];
+      if (!sheet) {
+        sheet = await doc.addSheet({ title, headerValues: ['DrawDate', 'Award', 'Numbers'] });
+      }
+
       for (const [award, nums] of Object.entries(data.results)) {
         await sheet.addRow({
           DrawDate: data.drawDate,
@@ -39,9 +51,16 @@ async function syncLottoToSheet(dataType, data) {
           Numbers: nums.join(', ')
         });
       }
+      console.log('✅ Synced draw result to Google Sheet successfully');
     }
   } catch (err) {
-    console.error('❌ Google Sheets Sync Error:', err);
+    if (err.message.includes('403')) {
+      console.error('❌ Google Sheets Error: บอทไม่มีสิทธิ์เข้าถึง (ลืมแชร์ชีทให้บอทหรือเปล่า?)');
+    } else if (err.message.includes('404')) {
+      console.error('❌ Google Sheets Error: ไม่พบ Sheet ID ที่ระบุใน .env');
+    } else {
+      console.error('❌ Google Sheets Sync Error:', err.message);
+    }
   }
 }
 
