@@ -9,7 +9,7 @@ const {
   MessageFlags
 } = require('discord.js');
 const LottoDraw = require('../models/LottoDraw');
-const { REWARDS } = require('../utils/lottoUtils');
+const { REWARDS, normalizeDate } = require('../utils/lottoUtils');
 const { syncLottoToSheet } = require('../utils/googleSheets');
 const moment = require('moment-timezone');
 
@@ -21,12 +21,17 @@ module.exports = {
     .addSubcommand(sub => 
       sub.setName('draw')
         .setDescription('ระบุผลรางวัลประจำงวด')
-        .addStringOption(opt => opt.setName('date').setDescription('วันที่ออกรางวัล (YYYY-MM-DD)').setRequired(true))),
+        .addStringOption(opt => opt.setName('date').setDescription('วันที่ (เช่น 20/4/2569 หรือ 20/04/2026)').setRequired(true))),
 
   async execute(interaction) {
     try {
       if (interaction.options.getSubcommand() === 'draw') {
-        const date = interaction.options.getString('date');
+        const rawDate = interaction.options.getString('date');
+        const date = normalizeDate(rawDate);
+
+        if (!date) {
+          return interaction.reply({ content: '❌ รูปแบบวันที่ไม่ถูกต้อง! กรุณาใส่แบบ วัน/เดือน/ปี เช่น `20/4/2569` หรือ `20/04/2026`', flags: [MessageFlags.Ephemeral] });
+        }
         
         const modal = new ModalBuilder()
           .setCustomId(`lotto_draw_modal_${date}`)

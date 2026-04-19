@@ -98,8 +98,39 @@ function checkPrize(ticketNumber, drawResult) {
   return bestPrize;
 }
 
+function normalizeDate(dateStr) {
+  if (!dateStr) return null;
+  // ล้างค่าว่างและเปลี่ยน - เป็น / เพื่อให้ง่ายต่อการแบ่ง
+  const cleanStr = dateStr.trim().replace(/-/g, '/');
+  let [d, m, y] = cleanStr.split('/');
+
+  // ถ้ากรอกมาแบบ YYYY/MM/DD (แบบเดิม)
+  if (d.length === 4) {
+    const tempY = d;
+    const tempD = y;
+    d = tempD;
+    y = tempY;
+  }
+
+  if (!d || !m || !y) return null;
+
+  let day = parseInt(d);
+  let month = parseInt(m);
+  let year = parseInt(y);
+
+  // ตรวจสอบปี พ.ศ. (ถ้ามากกว่า 2500 ให้ลบ 543)
+  if (year > 2500) {
+    year -= 543;
+  }
+
+  // สร้าง moment object และคืนค่าเป็น YYYY-MM-DD เพื่อบันทึกลงฐานข้อมูล
+  const date = moment(`${year}-${month}-${day}`, 'YYYY-M-D', true);
+  return date.isValid() ? date.format('YYYY-MM-DD') : null;
+}
+
 module.exports = {
   REWARDS,
   getNextDrawDate,
-  checkPrize
+  checkPrize,
+  normalizeDate
 };
