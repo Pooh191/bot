@@ -113,20 +113,14 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
     console.log("✅ ซิงค์ข้อมูลสำเร็จ! กำลังลงทะเบียน Slash Commands...");
     
     console.log("🔐 กำลังพยายาม Login เข้าสู่ Discord...");
-    console.log(`- ความยาว Token: ${process.env.BOT_TOKEN ? process.env.BOT_TOKEN.length : 0} ตัวอักษร`);
-    console.log(`- Client ID: ${process.env.CLIENT_ID ? process.env.CLIENT_ID.length : 0} ตัวอักษร`);
-
-    client.login(process.env.BOT_TOKEN).catch(e => {
+    // ข้ามการลงทะเบียน Slash Commands ไปก่อนเพื่อทดสอบการ Online
+    client.login(process.env.BOT_TOKEN).then(() => {
+        console.log("✅ บอท Login สำเร็จและควรจะออนไลน์แล้ว!");
+    }).catch(e => {
         console.error('❌ [LOGIN ERROR] ไม่สามารถ Login ได้:', e.message);
     });
 
-    console.log("📡 กำลังลงทะเบียน Slash Commands...");
-    // เพิ่ม Timeout ให้กับคำสั่ง rest.put
-    const registrationPromise = rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('ลงทะเบียน Slash Commands หมดเวลา (Timeout)')), 15000));
-
-    await Promise.race([registrationPromise, timeoutPromise]);
-    console.log(`✅ ลงทะเบียน Slash Commands สำเร็จ (${commands.length} คำสั่ง)`);
+    console.log("⚠️ ข้ามขั้นตอนลงทะเบียน Slash Commands (เพื่อทดสอบการ Online)...");
   } catch (e) {
     console.error('❌ การเริ่มต้นระบบล้มเหลว (Initialization failed):', e);
   }
