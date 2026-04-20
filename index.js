@@ -111,15 +111,21 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
     console.log("⏳ กำลังโหลดและซิงค์ข้อมูลจาก MongoDB...");
     await connectAndSyncAll();
     
-    console.log("🔐 กำลังพยายาม Login เข้าสู่ Discord...");
+    console.log("🔐 กำลังตรวจสอบการเชื่อมต่อเน็ตเวิร์กไปหา Discord...");
     
-    // เพิ่มการ Debug ภายในของ Discord.js
+    // ทดสอบการเชื่อมต่อพื้นฐาน (DNS & Connectivity)
+    const https = require('https');
+    https.get('https://discord.com/api/v10/gateway', (res) => {
+      console.log(`📡 [Network Check] ติดต่อ Discord API สำเร็จ (Status: ${res.statusCode})`);
+    }).on('error', (e) => {
+      console.error(`❌ [Network Check] ติดต่อ Discord ไม่ได้: ${e.message}`);
+    });
+
+    console.log("🔐 กำลังพยายาม Login เข้าสู่ Discord...");
     client.on('debug', info => console.log(`[DJS Debug] ${info}`));
     client.on('error', err => console.error(`[DJS Error] ${err.message}`));
 
-    client.login(process.env.BOT_TOKEN).then(() => {
-        // Log นี้จะขึ้นเมื่อ Login สำเร็จ
-    }).catch(e => {
+    client.login(process.env.BOT_TOKEN).catch(e => {
         console.error('❌ [LOGIN ERROR] ไม่สามารถ Login ได้:', e.message);
     });
 
