@@ -11,6 +11,9 @@ const JSONFileSchema = new mongoose.Schema({
 
 const JSONFileModel = mongoose.model('JSONFile', JSONFileSchema);
 
+// ปิดการ Buffer คำสั่ง (ถ้า DB ไม่ติด ให้ Error ทันที ไม่ต้องรอจน Discord ค้าง)
+mongoose.set('bufferCommands', false);
+
 // Cache หน่วยความจำหลักให้บอทวิ่งทำงานได้ไวปรี๊ดเหมือนเดิม
 const memoryCache = {
   users: null,
@@ -75,7 +78,9 @@ async function connectAndSyncAll() {
   try {
     console.log("⏳ ระบบก๊อก 2: กำลังเชื่อมต่อเข้าตู้เซฟคลาวด์ MongoDB...");
     const connUrl = process.env.MONGO_URI.replace('<password>', process.env.MONGO_PASS || '');
-    await mongoose.connect(connUrl);
+    await mongoose.connect(connUrl, {
+      serverSelectionTimeoutMS: 5000 // รอแค่ 5 วินาทีพอ ถ้าไม่ได้ให้หลุดไปก๊อก 1 (Offline) ทันที
+    });
     console.log("✅ เชื่อมต่อ MongoDB สำเร็จ! บอทกำลังออนไลน์และซิงค์ข้อมูล...");
 
     for (const entry of filesToLoad) {
