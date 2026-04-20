@@ -128,7 +128,7 @@ module.exports = async (interaction, client) => {
 
       const { users, user } = getUser(interaction.user.id);
       if (user.balance < totalCost) {
-        return interaction.update({ content: '❌ ยอดเงินของคุณไม่เพียงพอแล้ว!', embeds: [], components: [] });
+        return interaction.editReply({ content: '❌ ยอดเงินของคุณไม่เพียงพอแล้ว!', embeds: [], components: [] });
       }
 
       const nextDraw = getNextDrawDate().format('YYYY-MM-DD');
@@ -157,13 +157,17 @@ module.exports = async (interaction, client) => {
       }
 
       // Sync to Google Sheets
-      await syncLottoToSheet('purchases', {
-        userId: interaction.user.id,
-        username: interaction.user.tag,
-        numbers: numbers
-      });
+      try {
+        await syncLottoToSheet('purchases', {
+          userId: interaction.user.id,
+          username: interaction.user.tag,
+          numbers: numbers
+        });
+      } catch (sheetErr) {
+        console.error('❌ Google Sheets Error:', sheetErr.message);
+      }
 
-      await interaction.update({ 
+      await interaction.editReply({ 
         content: `✅ ชำระเงินสำเร็จ! คุณซื้อสลากจำนวน ${amount} ใบ เรียบร้อยแล้ว\nตรวจสอบเลขของคุณได้ในงวดวันที่ **${nextDraw}**\n\n📈 รอบถัดไปคุณสามารถซื้อเพิ่มได้สูงสุด **${user.lottoLimit}** ใบ!`, 
         embeds: [], 
         components: [] 
@@ -177,7 +181,7 @@ module.exports = async (interaction, client) => {
     }
 
     if (interaction.isButton() && interaction.customId === 'lotto_cancel') {
-      await interaction.update({ content: '🚫 ยกเลิกรายการซื้อสลากเรียบร้อยแล้ว', embeds: [], components: [] });
+      await interaction.editReply({ content: '🚫 ยกเลิกรายการซื้อสลากเรียบร้อยแล้ว', embeds: [], components: [] });
       return true;
     }
 
