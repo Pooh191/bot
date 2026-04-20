@@ -139,43 +139,41 @@ module.exports = async (interaction, client) => {
       user.lottoLimit = (user.lottoLimit || 3) + 4;
       saveUsers(users);
 
-      // บันทึกตั๋วลง MongoDB (ทำเฉพาะเมื่อออนไลน์)
-      const mongoose = require('mongoose');
-      if (mongoose.connection.readyState === 1) {
-        try {
-          const ticket = new LottoTicket({
-            userId: interaction.user.id,
-            drawDate: nextDraw,
-            numbers: numbers
-          });
-          await ticket.save();
-        } catch (dbErr) {
-          console.error('⚠️ ไม่สามารถบันทึกลง MongoDB ได้ (แต่ยอดเงินถูกหักแล้ว):', dbErr.message);
-        }
-      } else {
-        console.warn('📡 [Offline Mode] ข้ามการบันทึกตั๋วลง MongoDB เนื่องจากไม่ได้เชื่อมต่อ');
-      }
-
-      // Sync to Google Sheets
-      try {
-        await syncLottoToSheet('purchases', {
-          userId: interaction.user.id,
-          username: interaction.user.tag,
-          numbers: numbers
-        });
-      } catch (sheetErr) {
-        console.error('❌ Google Sheets Error:', sheetErr.message);
-      }
-
+      // === ตอบกลับผู้ใช้ทันทีเพื่อความเร็ว ===
       await interaction.editReply({ 
         content: `✅ ชำระเงินสำเร็จ! คุณซื้อสลากจำนวน ${amount} ใบ เรียบร้อยแล้ว\nตรวจสอบเลขของคุณได้ในงวดวันที่ **${nextDraw}**\n\n📈 รอบถัดไปคุณสามารถซื้อเพิ่มได้สูงสุด **${user.lottoLimit}** ใบ!`, 
         embeds: [], 
         components: [] 
       });
-      
-      // Log
-      const { sendEconomyLog } = require('../utils/logger');
-      await sendEconomyLog(client, '🎫 ซื้อสลากกินแบ่งรัฐบาล', `**ผู้ซื้อ:** <@${interaction.user.id}>\n**จำนวน:** ${amount} ใบ\n**เลขสลาก:** ${numbers.join(', ')}\n**ยอดเงิน:** ${totalCost.toLocaleString()} บาท\n**ยอดเสียสะสม:** ${user.lottoSpent.toLocaleString()} บาท`, 'Gold', false);
+
+      // === ทำงานเบื้องหลัง (Background Tasks) ===
+      (async () => {
+        try {
+          // 1. บันทึกตั๋วลง MongoDB
+          const mongoose = require('mongoose');
+          if (mongoose.connection.readyState === 1) {
+            const ticket = new LottoTicket({
+              userId: interaction.user.id,
+              drawDate: nextDraw,
+              numbers: numbers
+            });
+            await ticket.save();
+          }
+
+          // 2. Sync to Google Sheets
+          await syncLottoToSheet('purchases', {
+            userId: interaction.user.id,
+            username: interaction.user.tag,
+            numbers: numbers
+          });
+
+          // 3. Log
+          const { sendEconomyLog } = require('../utils/logger');
+          await sendEconomyLog(client, '🎫 ซื้อสลากกินแบ่งรัฐบาล', `**ผู้ซื้อ:** <@${interaction.user.id}>\n**จำนวน:** ${amount} ใบ\n**เลขสลาก:** ${numbers.join(', ')}\n**ยอดเงิน:** ${totalCost.toLocaleString()} บาท\n**ยอดเสียสะสม:** ${user.lottoSpent.toLocaleString()} บาท`, 'Gold', false);
+        } catch (bgErr) {
+          console.error('⚠️ Background Task Error (Lotto):', bgErr.message);
+        }
+      })();
 
       return true;
     }
