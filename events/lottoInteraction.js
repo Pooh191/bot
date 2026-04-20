@@ -120,6 +120,7 @@ module.exports = async (interaction, client) => {
 
     // === Button: ยืนยันการชำระเงิน ===
     if (interaction.isButton() && interaction.customId.startsWith('lotto_confirm_')) {
+      await interaction.deferUpdate().catch(() => {}); // ป้องกัน Timeout
       const parts = interaction.customId.split('_');
       const amount = parseInt(parts[2]);
       const numbers = parts[3].split('-');
