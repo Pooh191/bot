@@ -172,8 +172,8 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
     try {
       const name = await getNextVoiceChannelName(guild);
       const ch = await guild.channels.create({
-        name, 
-        type: ChannelType.GuildVoice, 
+        name,
+        type: ChannelType.GuildVoice,
         parent: category,
         reason: 'Auto-created VC'
       });
@@ -228,9 +228,9 @@ client.on('guildMemberUpdate', async (oldM, newM) => {
   const has = newM.roles.cache.has(civRole.id);
 
   // ตรวจสอบว่าคือกิจกรรม "เพิ่งได้รับยศหลัก" หรือไม่
-    if (!had && has) {
+  if (!had && has) {
     console.log(`👤 ตรวจพบ ${newM.user.tag} ได้รับยศหลัก "${CIVILIAN_ROLE_NAME}" กำลังสุ่มจังหวัด...`);
-    
+
     const uidRoles = getUidRoles();
     let roleName = uidRoles[newM.id];
     if (!roleName) {
@@ -251,7 +251,7 @@ client.on('guildMemberUpdate', async (oldM, newM) => {
       uidRoles[newM.id] = roleName;
       saveUidRoles(uidRoles);
       console.log(`📍 สุ่มได้จังหวัด: "${roleName}" (ประชากรเดิม: ${minCount})`);
-      
+
       // อัปเดตตัวนับไว้เฉยๆ เผื่อระบบเก่ามีเรียกใช้ที่ไหน
       saveCounter(getCounter() + 1);
     } else {
@@ -263,7 +263,7 @@ client.on('guildMemberUpdate', async (oldM, newM) => {
       try {
         await newM.roles.add(r);
         console.log(`✅ มอบยศ "${roleName}" ให้ ${newM.user.tag} เรียบร้อย!`);
-        
+
         const embed = new EmbedBuilder()
           .setColor(0x00AE86)
           .setTitle(`${newM.user.username} ได้รับยศ`)
@@ -372,7 +372,7 @@ client.on('guildUpdate', (oldGuild, newGuild) => {
   let changes = '';
   if (oldGuild.name !== newGuild.name) changes += `\n**ชื่อเก่า:** ${oldGuild.name}\n**ชื่อใหม่:** ${newGuild.name}`;
   if (oldGuild.icon !== newGuild.icon) changes += `\n**ไอคอน:** มีการเปลี่ยนรูปโปรไฟล์เซิร์ฟเวอร์`;
-  
+
   if (changes) {
     sendEconomyLog(client, '🏛️ อัปเดตข้อมูลเซิร์ฟเวอร์ (Server Updated)', `มีการเปลี่ยนแปลงดังนี้:${changes}`, 'Gold', false);
   }
@@ -407,7 +407,7 @@ client.on('stickerDelete', sticker => {
 // Admin Log: Member Kick/Ban/Timeout (Checking Audit Logs)
 client.on('guildAuditLogEntryCreate', async (auditLog) => {
   const { action, executorId, targetId, reason } = auditLog;
-  
+
   if (action === 20) { // Member Kick
     sendEconomyLog(client, '👢 การแตะออก (Member Kicked)', `**ผู้ถูกเตะ:** <@${targetId}>\n**ผู้สั่งการ:** <@${executorId}>\n**เหตุผล:** ${reason || 'ไม่ระบุ'}`, 'Orange', false);
   } else if (action === 22) { // Member Ban Add
