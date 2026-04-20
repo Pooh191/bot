@@ -112,10 +112,18 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
     await connectAndSyncAll();
     
     console.log("🔐 กำลังพยายาม Login เข้าสู่ Discord...");
-    await client.login(process.env.BOT_TOKEN);
-    console.log(`✅ Logged in as ${client.user?.tag || 'Unknown'}`);
+    
+    // เพิ่มการ Debug ภายในของ Discord.js
+    client.on('debug', info => console.log(`[DJS Debug] ${info}`));
+    client.on('error', err => console.error(`[DJS Error] ${err.message}`));
 
-    console.log("📡 กำลังลงทะเบียน Slash Commands...");
+    client.login(process.env.BOT_TOKEN).then(() => {
+        // Log นี้จะขึ้นเมื่อ Login สำเร็จ
+    }).catch(e => {
+        console.error('❌ [LOGIN ERROR] ไม่สามารถ Login ได้:', e.message);
+    });
+
+    console.log("📡 กำลังลงทะเบียน Slash Commands (ทำคู่ไปกับการ Login)...");
     await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
     console.log(`✅ ลงทะเบียน Slash Commands สำเร็จ (${commands.length} คำสั่ง)`);
   } catch (e) {
