@@ -112,11 +112,12 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
     await connectAndSyncAll();
     console.log("✅ ซิงค์ข้อมูลสำเร็จ! กำลังลงทะเบียน Slash Commands...");
     
-    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
-    console.log(`📡 ลงทะเบียน Slash Commands สำเร็จ (${commands.length} คำสั่ง)`);
-
     console.log("🔐 กำลังพยายาม Login เข้าสู่ Discord...");
     await client.login(process.env.BOT_TOKEN);
+
+    console.log("✅ บอทออนไลน์แล้ว! กำลังลงทะเบียน Slash Commands...");
+    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
+    console.log(`📡 ลงทะเบียน Slash Commands สำเร็จ (${commands.length} คำสั่ง)`);
   } catch (e) {
     console.error('❌ การเริ่มต้นระบบล้มเหลว (Initialization failed):', e);
   }

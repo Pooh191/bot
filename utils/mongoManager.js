@@ -93,35 +93,32 @@ async function connectAndSyncAll() {
     console.log("✅ เชื่อมต่อ MongoDB สำเร็จ! บอทกำลังออนไลน์และซิงค์ข้อมูล...");
 
     await Promise.all(filesToLoad.map(async (entry) => {
-      const doc = await JSONFileModel.findById(entry.name).lean();
-      
-      if (doc) {
-        if (entry.type === 'array') {
-          memoryCache[entry.name] = doc.arrayData || [];
-        } else {
-          memoryCache[entry.name] = doc.data || {};
-        }
-        console.log(`🌐 [Online] โหลดไฟล์ "${entry.name}" จาก Cloud เรียบร้อย`);
-      } else {
-        const localData = memoryCache[entry.name];
-        const isEmpty = entry.type === 'array' ? localData.length === 0 : Object.keys(localData).length === 0;
+      try {
+        const doc = await JSONFileModel.findById(entry.name).lean();
         
-        if (!isEmpty) {
-          console.log(`📡 [Migrate] พบข้อมูล "${entry.name}" ในเครื่องแต่ใน Cloud ว่าง... กำลังอัปโหลด!`);
+        if (doc) {
           if (entry.type === 'array') {
-            await JSONFileModel.create({ _id: entry.name, arrayData: localData });
+            memoryCache[entry.name] = doc.arrayData || [];
           } else {
-            await JSONFileModel.create({ _id: entry.name, data: localData });
+            memoryCache[entry.name] = doc.data || {};
           }
-          console.log(`✅ [Migrate] ข้อมูล "${entry.name}" ถูกสำรองขึ้น Cloud แล้ว!`);
+          console.log(`🌐 [Online] โหลดไฟล์ "${entry.name}" จาก Cloud สำเร็จ`);
         } else {
-          console.log(`🆕 [New] ไฟล์ "${entry.name}" ยังไม่มีข้อมูลทั้งในเครื่องและ Cloud`);
-          if (entry.type === 'array') {
-            await JSONFileModel.create({ _id: entry.name, arrayData: [] });
+          const localData = memoryCache[entry.name];
+          const isEmpty = entry.type === 'array' ? localData.length === 0 : Object.keys(localData).length === 0;
+          
+          if (!isEmpty) {
+            console.log(`📡 [Migrate] อัปโหลด "${entry.name}" ขึ้น Cloud...`);
+            const update = entry.type === 'array' ? { arrayData: localData } : { data: localData };
+            await JSONFileModel.findOneAndUpdate({ _id: entry.name }, { $set: update }, { upsert: true });
           } else {
-            await JSONFileModel.create({ _id: entry.name, data: {} });
+            console.log(`🆕 [New] ไฟล์ "${entry.name}" เริ่มต้นใหม่...`);
+            const update = entry.type === 'array' ? { arrayData: [] } : { data: {} };
+            await JSONFileModel.findOneAndUpdate({ _id: entry.name }, { $set: update }, { upsert: true });
           }
         }
+      } catch (err) {
+        console.error(`❌ ผิดพลาดที่ไฟล์ ${entry.name}:`, err.message);
       }
     }));
     console.log("🎉 ทุกอย่างพร้อมแล้ว! ข้อมูลออนไลน์ 100% บอทมีแต่รวยไม่มีรีเซ็ตแน่นอน!");
