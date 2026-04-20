@@ -108,14 +108,17 @@ for (const f of fs.readdirSync('./commands').filter(f => f.endsWith('.js'))) {
 const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 (async () => {
   try {
+    console.log("⏳ กำลังโหลดและซิงค์ข้อมูลจาก MongoDB...");
     await connectAndSyncAll();
+    console.log("✅ ซิงค์ข้อมูลสำเร็จ! กำลังลงทะเบียน Slash Commands...");
+    
     await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
-    console.log(`📡 Registered ${commands.length} slash commands`);
+    console.log(`📡 ลงทะเบียน Slash Commands สำเร็จ (${commands.length} คำสั่ง)`);
 
-    // Let the bot login ONLY after DB cache is ready
-    client.login(process.env.BOT_TOKEN);
+    console.log("🔐 กำลังพยายาม Login เข้าสู่ Discord...");
+    await client.login(process.env.BOT_TOKEN);
   } catch (e) {
-    console.error('❌ Initialization failed', e);
+    console.error('❌ การเริ่มต้นระบบล้มเหลว (Initialization failed):', e);
   }
 })();
 
