@@ -92,11 +92,10 @@ async function connectAndSyncAll() {
     });
     console.log("✅ เชื่อมต่อ MongoDB สำเร็จ! บอทกำลังออนไลน์และซิงค์ข้อมูล...");
 
-    for (const entry of filesToLoad) {
+    await Promise.all(filesToLoad.map(async (entry) => {
       const doc = await JSONFileModel.findById(entry.name).lean();
       
       if (doc) {
-        // มีข้อมูลบน Cloud: ให้โหลดทับ RAM (Cloud มาก่อน)
         if (entry.type === 'array') {
           memoryCache[entry.name] = doc.arrayData || [];
         } else {
@@ -104,12 +103,10 @@ async function connectAndSyncAll() {
         }
         console.log(`🌐 [Online] โหลดไฟล์ "${entry.name}" จาก Cloud เรียบร้อย`);
       } else {
-        // ไม่มีข้อมูลบน Cloud: ตรวจสอบว่า Local มีอะไรไหม
         const localData = memoryCache[entry.name];
         const isEmpty = entry.type === 'array' ? localData.length === 0 : Object.keys(localData).length === 0;
         
         if (!isEmpty) {
-          // มีข้อมูลในเครื่องแต่ใน Cloud ว่าง: อัปโหลดขึ้น Cloud (Migration)
           console.log(`📡 [Migrate] พบข้อมูล "${entry.name}" ในเครื่องแต่ใน Cloud ว่าง... กำลังอัปโหลด!`);
           if (entry.type === 'array') {
             await JSONFileModel.create({ _id: entry.name, arrayData: localData });
@@ -118,7 +115,6 @@ async function connectAndSyncAll() {
           }
           console.log(`✅ [Migrate] ข้อมูล "${entry.name}" ถูกสำรองขึ้น Cloud แล้ว!`);
         } else {
-          // ทั้งคู่ว่างเปล่า: สร้าง Template เปล่าไว้ใน Cloud
           console.log(`🆕 [New] ไฟล์ "${entry.name}" ยังไม่มีข้อมูลทั้งในเครื่องและ Cloud`);
           if (entry.type === 'array') {
             await JSONFileModel.create({ _id: entry.name, arrayData: [] });
@@ -127,7 +123,7 @@ async function connectAndSyncAll() {
           }
         }
       }
-    }
+    }));
     console.log("🎉 ทุกอย่างพร้อมแล้ว! ข้อมูลออนไลน์ 100% บอทมีแต่รวยไม่มีรีเซ็ตแน่นอน!");
 
   } catch (err) {
