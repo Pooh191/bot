@@ -77,9 +77,18 @@ async function connectAndSyncAll() {
 
   try {
     console.log("⏳ ระบบก๊อก 2: กำลังเชื่อมต่อเข้าตู้เซฟคลาวด์ MongoDB...");
-    const connUrl = process.env.MONGO_URI.replace('<password>', process.env.MONGO_PASS || '');
+    
+    // ตรวจสอบว่า MONGO_URI มีรหัสผ่านในตัวหรือใช้ placeholder
+    let connUrl = process.env.MONGO_URI;
+    if (connUrl.includes('<password>')) {
+      if (!process.env.MONGO_PASS) {
+        throw new Error("❌ พบ <password> ใน MONGO_URI แต่ไม่พบ MONGO_PASS ใน Environment Variables");
+      }
+      connUrl = connUrl.replace('<password>', process.env.MONGO_PASS);
+    }
+
     await mongoose.connect(connUrl, {
-      serverSelectionTimeoutMS: 5000 // รอแค่ 5 วินาทีพอ ถ้าไม่ได้ให้หลุดไปก๊อก 1 (Offline) ทันที
+      serverSelectionTimeoutMS: 5000
     });
     console.log("✅ เชื่อมต่อ MongoDB สำเร็จ! บอทกำลังออนไลน์และซิงค์ข้อมูล...");
 
