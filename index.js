@@ -111,16 +111,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
     console.log("⏳ กำลังโหลดและซิงค์ข้อมูลจาก MongoDB...");
     await connectAndSyncAll();
     
-    console.log("🔐 กำลังตรวจสอบการเชื่อมต่อเน็ตเวิร์กไปหา Discord...");
-    
-    // ทดสอบการเชื่อมต่อพื้นฐาน (DNS & Connectivity)
-    const https = require('https');
-    https.get('https://discord.com/api/v10/gateway', (res) => {
-      console.log(`📡 [Network Check] ติดต่อ Discord API สำเร็จ (Status: ${res.statusCode})`);
-    }).on('error', (e) => {
-      console.error(`❌ [Network Check] ติดต่อ Discord ไม่ได้: ${e.message}`);
-    });
-
     console.log("🔐 กำลังพยายาม Login เข้าสู่ Discord...");
     client.on('debug', info => console.log(`[DJS Debug] ${info}`));
     client.on('error', err => console.error(`[DJS Error] ${err.message}`));
@@ -129,9 +119,8 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
         console.error('❌ [LOGIN ERROR] ไม่สามารถ Login ได้:', e.message);
     });
 
-    console.log("📡 กำลังลงทะเบียน Slash Commands (ทำคู่ไปกับการ Login)...");
-    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
-    console.log(`✅ ลงทะเบียน Slash Commands สำเร็จ (${commands.length} คำสั่ง)`);
+    console.log("⚠️ ปิดการลงทะเบียน Slash Command ชั่วคราวเพื่อเลี่ยง Status 429 (Rate Limit)");
+    console.log("💡 หากบอทออนได้แล้วและต้องการอัปเดตคำสั่งใหม่ ค่อยเปิดกลับมาทีหลังครับ");
   } catch (e) {
     console.error('❌ การเริ่มต้นระบบล้มเหลว (Initialization failed):', e);
   }
