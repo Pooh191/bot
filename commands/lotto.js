@@ -6,12 +6,8 @@ const {
   ButtonStyle, 
   ModalBuilder, 
   TextInputBuilder, 
-  TextInputStyle,
-  MessageFlags
+  TextInputStyle
 } = require('discord.js');
-const { getNextDrawDate } = require('../utils/lottoUtils');
-const { getUser, saveUsers } = require('../utils/economyUtils');
-const moment = require('moment-timezone');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -25,6 +21,12 @@ module.exports = {
 
   async execute(interaction) {
     try {
+      console.log(`[LOTTO] Command used by ${interaction.user.tag}`);
+      
+      const { getUser } = require('../utils/economyUtils');
+      const { getNextDrawDate } = require('../utils/lottoUtils');
+      const moment = require('moment-timezone');
+
       const amount = interaction.options.getInteger('amount');
       const { user } = getUser(interaction.user.id);
       const limit = user.lottoLimit || 3;
@@ -70,16 +72,16 @@ module.exports = {
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true);
 
-      // ลบ setMinLength ออกเพื่อให้พิมพ์ได้อิสระตามที่แก้ในระบบแกะเลข
-      // .setMinLength(amount * 4 + (amount - 1))
-
       modal.addComponents(new ActionRowBuilder().addComponents(numberInput));
 
       await interaction.showModal(modal);
     } catch (err) {
-      console.error('Lotto Command Error:', err);
+      console.error('❌ Lotto Command Runtime Error:', err);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: '❌ เกิดข้อผิดพลาดในการประมวลผลคำสั่งหวย', ephemeral: true }).catch(() => {});
+        await interaction.reply({ 
+          content: `❌ เกิดข้อผิดพลาดร้ายแรง: \`${err.message}\``, 
+          ephemeral: true 
+        }).catch(() => {});
       }
     }
   }
