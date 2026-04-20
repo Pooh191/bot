@@ -6,7 +6,8 @@ const {
   ButtonStyle, 
   ModalBuilder, 
   TextInputBuilder, 
-  TextInputStyle
+  TextInputStyle,
+  MessageFlags
 } = require('discord.js');
 
 module.exports = {
@@ -34,7 +35,7 @@ module.exports = {
       if (amount > limit) {
         return interaction.reply({
           content: `❌ คุณสามารถซื้อได้สูงสุดแค่ ${limit} ใบในรอบนี้! (วงเงินของคุณจะเพิ่มขึ้นเมื่อมีการซื้อครั้งต่อไป)`,
-          ephemeral: true
+          flags: [MessageFlags.Ephemeral]
         });
       }
 
@@ -44,7 +45,7 @@ module.exports = {
       if (user.balance < totalCost) {
         return interaction.reply({ 
           content: `❌ คุณมีเงินไม่เพียงพอ! ต้องใช้ ${totalCost.toLocaleString()} บาท (คุณมี ${user.balance.toLocaleString()} บาท)`, 
-          ephemeral: true 
+          flags: [MessageFlags.Ephemeral] 
         });
       }
 
@@ -56,7 +57,7 @@ module.exports = {
       if (now.isAfter(saleEnd)) {
         return interaction.reply({ 
           content: `❌ ปิดการขายสลากสำหรับงวดนี้แล้วสิ! กรุณารอซื้อในงวดถัดไปหลังออกรางวัลเสร็จสิ้น`, 
-          ephemeral: true 
+          flags: [MessageFlags.Ephemeral] 
         });
       }
 
@@ -80,7 +81,7 @@ module.exports = {
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({ 
           content: `❌ เกิดข้อผิดพลาดร้ายแรง: \`${err.message}\``, 
-          ephemeral: true 
+          flags: [MessageFlags.Ephemeral] 
         }).catch(() => {});
       }
     }

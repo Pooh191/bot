@@ -80,7 +80,7 @@ module.exports = async (interaction, client) => {
       if (numbers.length < amount) {
         return interaction.reply({ 
           content: `❌ คุณระบุเลขไม่ครบตามจำนวนใบที่เลือก (${amount} ใบ)! คุณกรอกมาทั้งหมด ${allDigits.length} หลัก (ต้องการ ${amount * 4} หลัก)\nกรุณาลองใหม่อีกครั้ง โดยพิมพ์เลขต่อกัน 4 หลักสำหรับแต่ละใบ เช่น \`1234 5678\``, 
-          ephemeral: true 
+          flags: [MessageFlags.Ephemeral] 
         });
       }
 
@@ -114,7 +114,7 @@ module.exports = async (interaction, client) => {
           .setStyle(ButtonStyle.Danger)
       );
 
-      await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+      await interaction.reply({ embeds: [embed], components: [row], flags: [MessageFlags.Ephemeral] });
       return true;
     }
 
@@ -132,23 +132,28 @@ module.exports = async (interaction, client) => {
 
       const nextDraw = getNextDrawDate().format('YYYY-MM-DD');
 
-      // หักเงิน
+      // หักเงิน (บันทึกลง RAM และไฟล์เครื่อง)
       user.balance -= totalCost;
       user.lottoSpent = (user.lottoSpent || 0) + totalCost;
-      
-      // อัปเดต Limit (ทบ)
-      // "ซื้อ 1 ครั้งซื้อ 3 ใบ รอบต่อไปซื้อได้ไม่เกิน 7ใบ" -> Increment 4?
       user.lottoLimit = (user.lottoLimit || 3) + 4;
-
       saveUsers(users);
 
-      // บันทึกตั๋ว
-      const ticket = new LottoTicket({
-        userId: interaction.user.id,
-        drawDate: nextDraw,
-        numbers: numbers
-      });
-      await ticket.save();
+      // บันทึกตั๋วลง MongoDB (ทำเฉพาะเมื่อออนไลน์)
+      const mongoose = require('mongoose');
+      if (mongoose.connection.readyState === 1) {
+        try {
+          const ticket = new LottoTicket({
+            userId: interaction.user.id,
+            drawDate: nextDraw,
+            numbers: numbers
+          });
+          await ticket.save();
+        } catch (dbErr) {
+          console.error('⚠️ ไม่สามารถบันทึกลง MongoDB ได้ (แต่ยอดเงินถูกหักแล้ว):', dbErr.message);
+        }
+      } else {
+        console.warn('📡 [Offline Mode] ข้ามการบันทึกตั๋วลง MongoDB เนื่องจากไม่ได้เชื่อมต่อ');
+      }
 
       // Sync to Google Sheets
       await syncLottoToSheet('purchases', {
