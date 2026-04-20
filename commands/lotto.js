@@ -19,17 +19,25 @@ module.exports = {
     .setDescription('🎫 ซื้อสลากกินแบ่งรัฐบาล (ใบละ 80 บาท)')
     .addIntegerOption(opt => 
       opt.setName('amount')
-        .setDescription('จำนวนใบที่ต้องการซื้อ (ไม่เกิน 10 ใบ)')
+        .setDescription('จำนวนใบที่ต้องการซื้อ')
         .setMinValue(1)
-        .setMaxValue(10)
         .setRequired(true)),
 
   async execute(interaction) {
     const amount = interaction.options.getInteger('amount');
+    const { user } = getUser(interaction.user.id);
+    const limit = user.lottoLimit || 3;
+
+    if (amount > limit) {
+      return interaction.reply({
+        content: `❌ คุณสามารถซื้อได้สูงสุดแค่ ${limit} ใบในรอบนี้! (วงเงินของคุณจะเพิ่มขึ้นเมื่อมีการซื้อครั้งต่อไป)`,
+        flags: [MessageFlags.Ephemeral]
+      });
+    }
+
     const pricePerTicket = 80;
     const totalCost = amount * pricePerTicket;
 
-    const { user } = getUser(interaction.user.id);
     if (user.balance < totalCost) {
       return interaction.reply({ 
         content: `❌ คุณมีเงินไม่เพียงพอ! ต้องใช้ ${totalCost.toLocaleString()} บาท (คุณมี ${user.balance.toLocaleString()} บาท)`, 

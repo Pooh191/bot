@@ -30,6 +30,7 @@ module.exports = {
       .addFields(
         { name: '📊 ระดับและประสบการณ์', value: `**เลเวล:** ${user.level || 1}\n**XP:** ${user.xp || 0} / ${nextLevelXP}\n${progressBar}`, inline: false },
         { name: '💰 สถานะการเงิน', value: `**เงินสด:** ${(user.balance || 0).toLocaleString()} บาท\n**ธนาคาร:** ${(user.bank || 0).toLocaleString()} บาท${totalDebt > 0 ? `\n**💳 ยอดกู้คงเหลือ:** ${totalDebt.toLocaleString()} บาท` : ''}`, inline: true },
+        { name: '🎫 ข้อมูลสลากกินแบ่ง', value: `**ขีดจำกัดซื้อ:** ${user.lottoLimit || 3} ใบ\n**ยอดเสียสะสม:** ${(user.lottoSpent || 0).toLocaleString()} บาท`, inline: true },
         { name: '🎒 กระเป๋าสัมภาระ', value: `ไอเทมทั้งหมด: ${(user.inventory || []).length} ชิ้น\n(ใช้ \`/inventory\` เพื่อดูรายละเอียด)`, inline: true }
       )
       .setFooter({ text: 'THAILAND Economy System' })

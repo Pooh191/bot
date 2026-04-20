@@ -67,18 +67,29 @@ module.exports = async (interaction, client) => {
       const amount = parseInt(interaction.customId.split('_')[2]);
       const rawNumbers = interaction.fields.getTextInputValue('lotto_numbers');
       
-      // ล้างข้อมูลเลข (แยกด้วยเว้นวรรค, คอมม่า, หรือเอนเทอร์)
-      const numbers = rawNumbers.split(/[\s,\n]+/).filter(n => n.length === 4 && /^\d+$/.test(n));
+      // ล้างข้อมูลเลข: เอาเฉพาะตัวเลขทั้งหมดมาต่อกันแล้วแบ่งเป็นชุดละ 4 ตัว
+      const allDigits = rawNumbers.replace(/\D/g, '');
+      const numbers = [];
+      for (let i = 0; i < allDigits.length; i += 4) {
+        const chunk = allDigits.substring(i, i + 4);
+        if (chunk.length === 4) {
+          numbers.push(chunk);
+        }
+      }
 
-      if (numbers.length !== amount) {
+      if (numbers.length < amount) {
         return interaction.reply({ 
-          content: `❌ คุณระบุเลขไม่ครบตามจำนวนใบที่เลือก (${amount} ใบ) หรือเลขไม่เป็น 4 หลัก! กรุณาลองใหม่อีกครั้ง`, 
+          content: `❌ คุณระบุเลขไม่ครบตามจำนวนใบที่เลือก (${amount} ใบ)! คุณกรอกมาทั้งหมด ${allDigits.length} หลัก (ต้องการ ${amount * 4} หลัก)\nกรุณาลองใหม่อีกครั้ง โดยพิมพ์เลขต่อกัน 4 หลักสำหรับแต่ละใบ เช่น \`1234 5678\``, 
           flags: [MessageFlags.Ephemeral] 
         });
       }
 
+      // ตัดเอาเฉพาะเท่าที่ซื้อ
+      const finalNumbers = numbers.slice(0, amount);
       const totalCost = amount * 80;
       const nextDraw = getNextDrawDate().format('YYYY-MM-DD');
+
+      const { user } = getUser(interaction.user.id);
 
       const embed = new EmbedBuilder()
         .setTitle('🛒 สรุปรายการซื้อสลากกินแบ่ง')
@@ -87,13 +98,14 @@ module.exports = async (interaction, client) => {
           { name: '📅 งวดประจำวันที่', value: nextDraw, inline: true },
           { name: '🎫 จำนวนสลาก', value: `${amount} ใบ`, inline: true },
           { name: '💰 รวมยอดชำระ', value: `${totalCost.toLocaleString()} บาท`, inline: true },
-          { name: '🔢 เลขที่เลือก', value: `\`${numbers.join('`, `')}\`` }
+          { name: '🔢 เลขที่เลือก', value: `\`${finalNumbers.join('`, `')}\`` },
+          { name: '📉 ยอดเสียรวมทั้งหมด', value: `${(user.lottoSpent || 0).toLocaleString()} บาท`, inline: true }
         )
         .setFooter({ text: 'กรุณากดปุ่มยืนยันเพื่อชำระเงิน' });
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-          .setCustomId(`lotto_confirm_${amount}_${numbers.join('-')}`)
+          .setCustomId(`lotto_confirm_${amount}_${finalNumbers.join('-')}`)
           .setLabel('ยืนยันชำระเงิน')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
@@ -122,6 +134,12 @@ module.exports = async (interaction, client) => {
 
       // หักเงิน
       user.balance -= totalCost;
+      user.lottoSpent = (user.lottoSpent || 0) + totalCost;
+      
+      // อัปเดต Limit (ทบ)
+      // "ซื้อ 1 ครั้งซื้อ 3 ใบ รอบต่อไปซื้อได้ไม่เกิน 7ใบ" -> Increment 4?
+      user.lottoLimit = (user.lottoLimit || 3) + 4;
+
       saveUsers(users);
 
       // บันทึกตั๋ว
@@ -140,14 +158,14 @@ module.exports = async (interaction, client) => {
       });
 
       await interaction.update({ 
-        content: `✅ ชำระเงินสำเร็จ! คุณซื้อสลากจำนวน ${amount} ใบ เรียบร้อยแล้ว\nตรวจสอบเลขของคุณได้ในงวดวันที่ **${nextDraw}**`, 
+        content: `✅ ชำระเงินสำเร็จ! คุณซื้อสลากจำนวน ${amount} ใบ เรียบร้อยแล้ว\nตรวจสอบเลขของคุณได้ในงวดวันที่ **${nextDraw}**\n\n📈 รอบถัดไปคุณสามารถซื้อเพิ่มได้สูงสุด **${user.lottoLimit}** ใบ!`, 
         embeds: [], 
         components: [] 
       });
       
       // Log
       const { sendEconomyLog } = require('../utils/logger');
-      await sendEconomyLog(client, '🎫 ซื้อสลากกินแบ่งรัฐบาล', `**ผู้ซื้อ:** <@${interaction.user.id}>\n**จำนวน:** ${amount} ใบ\n**เลขสลาก:** ${numbers.join(', ')}\n**ยอดเงิน:** ${totalCost.toLocaleString()} บาท`, 'Gold', false);
+      await sendEconomyLog(client, '🎫 ซื้อสลากกินแบ่งรัฐบาล', `**ผู้ซื้อ:** <@${interaction.user.id}>\n**จำนวน:** ${amount} ใบ\n**เลขสลาก:** ${numbers.join(', ')}\n**ยอดเงิน:** ${totalCost.toLocaleString()} บาท\n**ยอดเสียสะสม:** ${user.lottoSpent.toLocaleString()} บาท`, 'Gold', false);
 
       return true;
     }
