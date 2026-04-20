@@ -80,7 +80,7 @@ module.exports = async (interaction, client) => {
       if (numbers.length < amount) {
         return interaction.reply({ 
           content: `❌ คุณระบุเลขไม่ครบตามจำนวนใบที่เลือก (${amount} ใบ)! คุณกรอกมาทั้งหมด ${allDigits.length} หลัก (ต้องการ ${amount * 4} หลัก)\nกรุณาลองใหม่อีกครั้ง โดยพิมพ์เลขต่อกัน 4 หลักสำหรับแต่ละใบ เช่น \`1234 5678\``, 
-          flags: [MessageFlags.Ephemeral] 
+          ephemeral: true 
         });
       }
 
@@ -114,7 +114,7 @@ module.exports = async (interaction, client) => {
           .setStyle(ButtonStyle.Danger)
       );
 
-      await interaction.reply({ embeds: [embed], components: [row], flags: [MessageFlags.Ephemeral] });
+      await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
       return true;
     }
 
