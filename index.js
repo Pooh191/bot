@@ -108,21 +108,10 @@ for (const f of fs.readdirSync('./commands').filter(f => f.endsWith('.js'))) {
 const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 (async () => {
   try {
-    console.log("⏳ กำลังโหลดและซิงค์ข้อมูลจาก MongoDB...");
     await connectAndSyncAll();
-    
-    console.log("🔐 กำลังพยายาม Login เข้าสู่ Discord...");
-    client.on('debug', info => console.log(`[DJS Debug] ${info}`));
-    client.on('error', err => console.error(`[DJS Error] ${err.message}`));
-
-    client.login(process.env.BOT_TOKEN).catch(e => {
-        console.error('❌ [LOGIN ERROR] ไม่สามารถ Login ได้:', e.message);
-    });
-
-    console.log("⚠️ ปิดการลงทะเบียน Slash Command ชั่วคราวเพื่อเลี่ยง Status 429 (Rate Limit)");
-    console.log("💡 หากบอทออนได้แล้วและต้องการอัปเดตคำสั่งใหม่ ค่อยเปิดกลับมาทีหลังครับ");
+    client.login(process.env.BOT_TOKEN);
   } catch (e) {
-    console.error('❌ การเริ่มต้นระบบล้มเหลว (Initialization failed):', e);
+    console.error('❌ การเริ่มต้นระบบล้มเหลว:', e);
   }
 })();
 
@@ -135,7 +124,7 @@ const statuses = [
 ];
 
 client.on('ready', () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+  console.log(`✅ เชื่อมต่อสำเร็จ! ออนไลน์ในชื่อ: ${client.user.tag}`);
 
   // ฟังก์ชันเปลี่ยนสถานะ
   const changeStatus = () => {
