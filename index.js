@@ -110,17 +110,14 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
   try {
     console.log("⏳ กำลังโหลดและซิงค์ข้อมูลจาก MongoDB...");
     await connectAndSyncAll();
-    console.log("✅ ซิงค์ข้อมูลสำเร็จ! กำลังลงทะเบียน Slash Commands...");
     
     console.log("🔐 กำลังพยายาม Login เข้าสู่ Discord...");
-    // ข้ามการลงทะเบียน Slash Commands ไปก่อนเพื่อทดสอบการ Online
-    client.login(process.env.BOT_TOKEN).then(() => {
-        console.log("✅ บอท Login สำเร็จและควรจะออนไลน์แล้ว!");
-    }).catch(e => {
-        console.error('❌ [LOGIN ERROR] ไม่สามารถ Login ได้:', e.message);
-    });
+    await client.login(process.env.BOT_TOKEN);
+    console.log(`✅ Logged in as ${client.user?.tag || 'Unknown'}`);
 
-    console.log("⚠️ ข้ามขั้นตอนลงทะเบียน Slash Commands (เพื่อทดสอบการ Online)...");
+    console.log("📡 กำลังลงทะเบียน Slash Commands...");
+    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
+    console.log(`✅ ลงทะเบียน Slash Commands สำเร็จ (${commands.length} คำสั่ง)`);
   } catch (e) {
     console.error('❌ การเริ่มต้นระบบล้มเหลว (Initialization failed):', e);
   }
