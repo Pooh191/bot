@@ -109,6 +109,12 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 (async () => {
   try {
     await connectAndSyncAll();
+    
+    // ลงทะเบียนคำสั่งใหม่เพื่อให้ชัวร์ว่าคำสั่งอัปเดต (แต่ทำเป็นเบื้องหลังไม่ขวางการ Login)
+    rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands })
+      .then(() => console.log(`📡 อัปเดต Slash Commands สำเร็จ (${commands.length} คำสั่ง)`))
+      .catch(err => console.error('⚠️ ไม่สามารถอัปเดต Slash Commands ได้:', err.message));
+
     client.login(process.env.BOT_TOKEN);
   } catch (e) {
     console.error('❌ การเริ่มต้นระบบล้มเหลว:', e);

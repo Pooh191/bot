@@ -23,12 +23,20 @@ module.exports = {
   async execute(interaction, client) {
     try {
       // ✅ ระบบหาเพื่อน (Friend Finder)
-      const datingHandlers = require('./datingInteraction');
-      if (await datingHandlers(interaction, client)) return;
-
+      try {
+        const datingHandlers = require('./datingInteraction');
+        if (await datingHandlers(interaction, client)) return;
+      } catch (err) {
+        console.error('❌ Dating Handler Error:', err);
+      }
+ 
       // ✅ ระบบสลากกินแบ่งรัฐบาล (Lotto)
-      const lottoHandlers = require('./lottoInteraction');
-      if (await lottoHandlers(interaction, client)) return;
+      try {
+        const lottoHandlers = require('./lottoInteraction');
+        if (await lottoHandlers(interaction, client)) return;
+      } catch (err) {
+        console.error('❌ Lotto Handler Error:', err);
+      }
 
       // ✅ ปุ่มขอสัญชาติ
       if (interaction.isButton() && interaction.customId === 'citizen_request') {
