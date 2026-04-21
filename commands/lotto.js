@@ -33,8 +33,8 @@ module.exports = {
       const drawDate = getNextDrawDate();
       const nextDrawStr = drawDate.format('YYYY-MM-DD');
 
-      // Reset quota if it's a new draw
-      if (user.lastLottoDraw !== nextDrawStr) {
+      // Reset quota if it's a new draw OR if current limit is invalid (legacy bug)
+      if (user.lastLottoDraw !== nextDrawStr || (user.lottoLimit || 0) > 10) {
         user.lottoLimit = 10;
         user.lastLottoDraw = nextDrawStr;
         saveUsers(users);
