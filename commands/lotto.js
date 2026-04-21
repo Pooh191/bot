@@ -29,12 +29,21 @@ module.exports = {
       const moment = require('moment-timezone');
 
       const amount = interaction.options.getInteger('amount');
-      const { user } = getUser(interaction.user.id);
-      const limit = user.lottoLimit || 3;
+      const { users, user } = getUser(interaction.user.id);
+      const nextDraw = getNextDrawDate().format('YYYY-MM-DD');
+
+      // Reset quota if it's a new draw
+      if (user.lastLottoDraw !== nextDraw) {
+        user.lottoLimit = 10;
+        user.lastLottoDraw = nextDraw;
+        saveUsers(users);
+      }
+
+      const limit = user.lottoLimit || 10;
 
       if (amount > limit) {
         return interaction.reply({
-          content: `❌ คุณสามารถซื้อได้สูงสุดแค่ ${limit} ใบในรอบนี้! (วงเงินของคุณจะเพิ่มขึ้นเมื่อมีการซื้อครั้งต่อไป)`,
+          content: `❌ คุณสามารถซื้อได้อีกเพียง **${limit} ใบ** ในงวดนี้! (โควต้าของคุณคือ 10 ใบต่องวด)`,
           flags: [MessageFlags.Ephemeral]
         });
       }

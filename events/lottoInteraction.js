@@ -42,15 +42,27 @@ module.exports = async (interaction, client) => {
       await syncLottoToSheet('results', { drawDate, results });
 
       const embed = new EmbedBuilder()
-        .setTitle(`📢 ประกาศผลรางวัลสลากกินแบ่งรัฐบาล งวดวันที่ ${drawDate}`)
+        .setTitle('📜 ประกาศผลรางวัลสลากกินแบ่งรัฐบาล')
+        .setAuthor({ name: 'กองสลากกินแบ่งรัฐบาล | กระทรวงการคลัง' })
+        .setDescription(`**งวดประจำวันที่ ${drawDate}**\n*ผลการออกรางวัลอย่างเป็นทางการ*`)
         .setColor('Gold')
+        .setThumbnail('https://media.discordapp.net/attachments/1113063853315842100/1152912423854284850/banner.png')
         .setTimestamp();
 
-      for (const [award, nums] of Object.entries(results)) {
-        embed.addFields({ name: award, value: `\`${nums.join('`, `')}\``, inline: true });
+      // Top Prizes first
+      const sortedPrizes = Object.entries(results).sort((a, b) => {
+          if (a[0].includes('ที่ 1')) return -1;
+          if (b[0].includes('ที่ 1')) return 1;
+          return 0;
+      });
+
+      for (const [award, nums] of sortedPrizes) {
+        embed.addFields({ name: `📌 ${award}`, value: `**[ ${nums.join(' ]   [ ')} ]**`, inline: false });
       }
 
-      await interaction.reply({ content: '✅ ประกาศผลรางวัลเรียบร้อยแล้ว!', embeds: [embed] });
+      embed.setFooter({ text: 'คณะรัฐมนตรีได้อนุมัติเอกสารการออกรางวัลนี้แล้ว' });
+
+      await interaction.reply({ content: '✅ ประกาศผลรางวัลและแจ้งคณะรัฐมนตรีเรียบร้อยแล้ว!', embeds: [embed] });
 
       // Notify and potentially issue official document?
       // User said: "ให้คณะรัฐมนตรีออกเป็นเอกสารการออกรางวัลทั้งหมด"
@@ -95,22 +107,24 @@ module.exports = async (interaction, client) => {
         .setTitle('🛒 สรุปรายการซื้อสลากกินแบ่ง')
         .setColor('Blue')
         .addFields(
-          { name: '📅 งวดประจำวันที่', value: nextDraw, inline: true },
-          { name: '🎫 จำนวนสลาก', value: `${amount} ใบ`, inline: true },
-          { name: '💰 รวมยอดชำระ', value: `${totalCost.toLocaleString()} บาท`, inline: true },
-          { name: '🔢 เลขที่เลือก', value: `\`${finalNumbers.join('`, `')}\`` },
-          { name: '📉 ยอดเสียรวมทั้งหมด', value: `${(user.lottoSpent || 0).toLocaleString()} บาท`, inline: true }
+          { name: '📅 งวดประจำวันที่', value: `\`${nextDraw}\``, inline: true },
+          { name: '🎫 จำนวนสลาก', value: `\`${amount} ใบ\``, inline: true },
+          { name: '💰 รวมยอดชำระ', value: `\`${totalCost.toLocaleString()} บาท\``, inline: true },
+          { name: '🔢 เลขที่เลือก', value: `**${finalNumbers.join(', ')}**` },
+          { name: '📉 ยอดเสียรวมทั้งหมด', value: `\`${(user.lottoSpent || 0).toLocaleString()} บาท\``, inline: true }
         )
-        .setFooter({ text: 'กรุณากดปุ่มยืนยันเพื่อชำระเงิน' });
+        .setFooter({ text: 'กรุณากดปุ่มยืนยันเพื่อชำระเงิน | ระบบสลากกินแบ่งรัฐบาล' });
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`lotto_confirm_${amount}_${finalNumbers.join('-')}`)
           .setLabel('ยืนยันชำระเงิน')
+          .setEmoji('✅')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('lotto_cancel')
           .setLabel('ยกเลิก')
+          .setEmoji('✖️')
           .setStyle(ButtonStyle.Danger)
       );
 

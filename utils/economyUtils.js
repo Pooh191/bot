@@ -28,7 +28,7 @@ function getUser(userId) {
       loanPrincipal: 0,
       loanInterest: 0,
       lottoSpent: 0,
-      lottoLimit: 3
+      lottoLimit: 10
     };
     saveUsers(users);
   } else {
@@ -41,7 +41,7 @@ function getUser(userId) {
     if (users[userId].loanPrincipal === undefined) users[userId].loanPrincipal = 0;
     if (users[userId].loanInterest === undefined) users[userId].loanInterest = 0;
     if (users[userId].lottoSpent === undefined) users[userId].lottoSpent = 0;
-    if (users[userId].lottoLimit === undefined) users[userId].lottoLimit = 3;
+    if (users[userId].lottoLimit === undefined) users[userId].lottoLimit = 10;
     
     // ลบ Migration loanDebt ที่เสี่ยงออก (ถ้าไม่มีใครใช้แล้ว)
     if (users[userId].loanDebt !== undefined) delete users[userId].loanDebt;
