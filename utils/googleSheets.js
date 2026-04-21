@@ -30,12 +30,14 @@ async function syncLottoToSheet(dataType, data) {
         sheet = await doc.addSheet({ title, headerValues: ['Date', 'User', 'Numbers', 'Status'] });
       }
       
-      await sheet.addRow({
-        Date: moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss'),
-        User: data.username || data.userId,
-        Numbers: data.numbers.join(', '),
-        Status: 'Purchased'
-      });
+      for (const num of data.numbers) {
+        await sheet.addRow({
+          Date: moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss'),
+          User: data.username || data.userId,
+          Numbers: num,
+          Status: 'Purchased'
+        });
+      }
       console.log('✅ Synced purchase to Google Sheet successfully');
     } else if (dataType === 'results') {
       const title = 'Results';
