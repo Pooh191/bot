@@ -24,18 +24,19 @@ module.exports = {
     try {
       console.log(`[LOTTO] Command used by ${interaction.user.tag}`);
       
-      const { getUser } = require('../utils/economyUtils');
+      const { getUser, saveUsers } = require('../utils/economyUtils');
       const { getNextDrawDate } = require('../utils/lottoUtils');
       const moment = require('moment-timezone');
 
       const amount = interaction.options.getInteger('amount');
       const { users, user } = getUser(interaction.user.id);
-      const nextDraw = getNextDrawDate().format('YYYY-MM-DD');
+      const drawDate = getNextDrawDate();
+      const nextDrawStr = drawDate.format('YYYY-MM-DD');
 
       // Reset quota if it's a new draw
-      if (user.lastLottoDraw !== nextDraw) {
+      if (user.lastLottoDraw !== nextDrawStr) {
         user.lottoLimit = 10;
-        user.lastLottoDraw = nextDraw;
+        user.lastLottoDraw = nextDrawStr;
         saveUsers(users);
       }
 
@@ -60,8 +61,7 @@ module.exports = {
 
       // Check Sale Time
       const now = moment().tz('Asia/Bangkok');
-      const nextDraw = getNextDrawDate();
-      const saleEnd = nextDraw.clone().hour(17).minute(30).second(0);
+      const saleEnd = drawDate.clone().hour(17).minute(30).second(0);
 
       if (now.isAfter(saleEnd)) {
         return interaction.reply({ 
