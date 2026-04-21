@@ -24,9 +24,6 @@ module.exports = {
         .setDescription('ระบุผลรางวัลประจำงวด')
         .addStringOption(opt => opt.setName('date').setDescription('วันที่ (เช่น 20/4/2569 หรือ 20/04/2026)').setRequired(true)))
     .addSubcommand(sub => 
-      sub.setName('sync')
-        .setDescription('ส่งข้อมูลการซื้อสลากทั้งหมดเข้า Google Sheet ทันที (Manual Sync)'))
-    .addSubcommand(sub => 
       sub.setName('reset')
         .setDescription('คืนค่าระบบหวยทั้งหมด (ล้างสลาก/ผลรางวัล/รีเซ็ตโควต้า)')),
 
@@ -53,23 +50,6 @@ module.exports = {
 
         modal.addComponents(new ActionRowBuilder().addComponents(input));
         await interaction.showModal(modal);
-      } else if (interaction.options.getSubcommand() === 'sync') {
-        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-        
-        const tickets = await LottoTicket.find({});
-        if (tickets.length === 0) {
-          return interaction.editReply('❌ ไม่มีข้อมูลสลากในระบบให้ส่งครับ');
-        }
-
-        for (const ticket of tickets) {
-          await syncLottoToSheet('purchases', {
-            userId: ticket.userId,
-            username: `UID: ${ticket.userId}`,
-            numbers: ticket.numbers
-          });
-        }
-
-        await interaction.editReply(`✅ ทำการส่งข้อมูลสลากทั้งหมด (${tickets.length} รายการ) เข้า Google Sheet เรียบร้อยแล้วครับ!`);
       } else if (interaction.options.getSubcommand() === 'reset') {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
