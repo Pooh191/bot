@@ -17,6 +17,7 @@ module.exports = async (interaction, client) => {
   try {
     // === Modal Submit: ประกาศผลรางวัล (Admin) ===
     if (interaction.isModalSubmit() && interaction.customId.startsWith('lotto_draw_modal_')) {
+      await interaction.deferReply().catch(() => {});
       const drawDate = interaction.customId.replace('lotto_draw_modal_', '');
       const rawResults = interaction.fields.getTextInputValue('draw_results');
 
@@ -62,7 +63,7 @@ module.exports = async (interaction, client) => {
 
       embed.setFooter({ text: 'คณะรัฐมนตรีได้อนุมัติเอกสารการออกรางวัลนี้แล้ว' });
 
-      await interaction.reply({ content: '✅ ประกาศผลรางวัลและแจ้งคณะรัฐมนตรีเรียบร้อยแล้ว!', embeds: [embed] });
+      await interaction.editReply({ content: '✅ ประกาศผลรางวัลและแจ้งคณะรัฐมนตรีเรียบร้อยแล้ว!', embeds: [embed] }).catch(() => {});
 
       // Notify and potentially issue official document?
       // User said: "ให้คณะรัฐมนตรีออกเป็นเอกสารการออกรางวัลทั้งหมด"
@@ -76,6 +77,7 @@ module.exports = async (interaction, client) => {
       return true;
     }    // === Modal Submit: ระบุเลขสลาก ===
     if (interaction.isModalSubmit() && interaction.customId.startsWith('lotto_modal_')) {
+      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
       const amount = parseInt(interaction.customId.split('_')[2]);
       const rawNumbers = interaction.fields.getTextInputValue('lotto_numbers');
       
@@ -90,10 +92,9 @@ module.exports = async (interaction, client) => {
       }
 
       if (numbers.length < amount) {
-        return interaction.reply({ 
-          content: `❌ คุณระบุเลขไม่ครบตามจำนวนใบที่เลือก (${amount} ใบ)! คุณกรอกมาทั้งหมด ${allDigits.length} หลัก (ต้องการ ${amount * 4} หลัก)\nกรุณาลองใหม่อีกครั้ง โดยพิมพ์เลขต่อกัน 4 หลักสำหรับแต่ละใบ เช่น \`1234 5678\``, 
-          flags: [MessageFlags.Ephemeral] 
-        });
+        return interaction.editReply({ 
+          content: `❌ คุณระบุเลขไม่ครบตามจำนวนใบที่เลือก (${amount} ใบ)! คุณกรอกมาทั้งหมด ${allDigits.length} หลัก (ต้องการ ${amount * 4} หลัก)\nกรุณาลองใหม่อีกครั้ง โดยพิมพ์เลขต่อกัน 4 หลักสำหรับแต่ละใบ เช่น \`1234 5678\``
+        }).catch(() => {});
       }
 
       // ตัดเอาเฉพาะเท่าที่ซื้อ
@@ -128,7 +129,7 @@ module.exports = async (interaction, client) => {
           .setStyle(ButtonStyle.Danger)
       );
 
-      await interaction.reply({ embeds: [embed], components: [row], flags: [MessageFlags.Ephemeral] });
+      await interaction.editReply({ embeds: [embed], components: [row] }).catch(() => {});
       return true;
     }
 
@@ -142,7 +143,7 @@ module.exports = async (interaction, client) => {
 
       const { users, user } = getUser(interaction.user.id);
       if (user.balance < totalCost) {
-        return interaction.editReply({ content: '❌ ยอดเงินของคุณไม่เพียงพอแล้ว!', embeds: [], components: [] });
+        return interaction.editReply({ content: '❌ ยอดเงินของคุณไม่เพียงพอแล้ว!', embeds: [], components: [] }).catch(() => {});
       }
 
       const nextDraw = getNextDrawDate().format('YYYY-MM-DD');
@@ -158,7 +159,7 @@ module.exports = async (interaction, client) => {
         content: `✅ ชำระเงินสำเร็จ! คุณซื้อสลากจำนวน ${amount} ใบ เรียบร้อยแล้ว\nตรวจสอบเลขของคุณได้ในงวดวันที่ **${nextDraw}**\n\n📈 รอบถัดไปคุณสามารถซื้อเพิ่มได้สูงสุด **${user.lottoLimit}** ใบ!`, 
         embeds: [], 
         components: [] 
-      });
+      }).catch(() => {});
 
       // === ทำงานเบื้องหลัง (Background Tasks) ===
       (async () => {
@@ -193,7 +194,8 @@ module.exports = async (interaction, client) => {
     }
 
     if (interaction.isButton() && interaction.customId === 'lotto_cancel') {
-      await interaction.editReply({ content: '🚫 ยกเลิกรายการซื้อสลากเรียบร้อยแล้ว', embeds: [], components: [] });
+      await interaction.deferUpdate().catch(() => {});
+      await interaction.editReply({ content: '🚫 ยกเลิกรายการซื้อสลากเรียบร้อยแล้ว', embeds: [], components: [] }).catch(() => {});
       return true;
     }
 

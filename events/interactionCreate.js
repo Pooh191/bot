@@ -17,6 +17,8 @@ const { getUser, saveUsers, addXP } = require('../utils/economyUtils');
 const { sendEconomyLog } = require('../utils/logger');
 const moment = require('moment-timezone');
 const { getCache, setCacheAndSave } = require('../utils/mongoManager');
+const lottoHandlers = require('./lottoInteraction');
+const datingHandlers = require('./datingInteraction');
 
 module.exports = {
   name: 'interactionCreate',
@@ -24,7 +26,6 @@ module.exports = {
     try {
       // ✅ ระบบหาเพื่อน (Friend Finder)
       try {
-        const datingHandlers = require('./datingInteraction');
         if (await datingHandlers(interaction, client)) return;
       } catch (err) {
         console.error('❌ Dating Handler Error:', err);
@@ -32,7 +33,6 @@ module.exports = {
  
       // ✅ ระบบสลากกินแบ่งรัฐบาล (Lotto)
       try {
-        const lottoHandlers = require('./lottoInteraction');
         if (await lottoHandlers(interaction, client)) return;
       } catch (err) {
         console.error('❌ Lotto Handler Error:', err);
