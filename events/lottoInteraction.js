@@ -151,12 +151,12 @@ module.exports = async (interaction, client) => {
       // หักเงิน (บันทึกลง RAM และไฟล์เครื่อง)
       user.balance -= totalCost;
       user.lottoSpent = (user.lottoSpent || 0) + totalCost;
-      user.lottoLimit = (user.lottoLimit || 3) + 4;
+      user.lottoLimit = (user.lottoLimit !== undefined ? user.lottoLimit : 10) - amount;
       saveUsers(users);
 
       // === ตอบกลับผู้ใช้ทันทีเพื่อความเร็ว ===
       await interaction.editReply({ 
-        content: `✅ ชำระเงินสำเร็จ! คุณซื้อสลากจำนวน ${amount} ใบ เรียบร้อยแล้ว\nตรวจสอบเลขของคุณได้ในงวดวันที่ **${nextDraw}**\n\n📈 รอบถัดไปคุณสามารถซื้อเพิ่มได้สูงสุด **${user.lottoLimit}** ใบ!`, 
+        content: `✅ ชำระเงินสำเร็จ! คุณซื้อสลากจำนวน ${amount} ใบ เรียบร้อยแล้ว\nตรวจสอบเลขของคุณได้ในงวดวันที่ **${nextDraw}**\n\n📈 งวดนี้คุณยังสามารถซื้อได้อีก **${user.lottoLimit}** ใบ!`, 
         embeds: [], 
         components: [] 
       }).catch(() => {});

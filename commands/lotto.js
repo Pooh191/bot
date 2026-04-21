@@ -44,7 +44,7 @@ module.exports = {
 
       if (amount > limit) {
         return interaction.reply({
-          content: `❌ คุณสามารถซื้อได้อีกเพียง **${limit} ใบ** ในงวดนี้! (โควต้าของคุณคือ 10 ใบต่องวด)`,
+          content: `❌ คุณสามารถซื้อได้อีกเพียง **${limit} ใบ** ในงวดนี้!`, 
           flags: [MessageFlags.Ephemeral]
         });
       }
