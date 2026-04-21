@@ -25,7 +25,10 @@ module.exports = {
         .addStringOption(opt => opt.setName('date').setDescription('วันที่ (เช่น 20/4/2569 หรือ 20/04/2026)').setRequired(true)))
     .addSubcommand(sub => 
       sub.setName('sync')
-        .setDescription('ส่งข้อมูลการซื้อสลากทั้งหมดเข้า Google Sheet ทันที (Manual Sync)')),
+        .setDescription('ส่งข้อมูลการซื้อสลากทั้งหมดเข้า Google Sheet ทันที (Manual Sync)'))
+    .addSubcommand(sub => 
+      sub.setName('reset')
+        .setDescription('คืนค่าระบบหวยทั้งหมด (ล้างสลาก/ผลรางวัล/รีเซ็ตโควต้า)')),
 
   async execute(interaction) {
     try {
@@ -67,6 +70,43 @@ module.exports = {
         }
 
         await interaction.editReply(`✅ ทำการส่งข้อมูลสลากทั้งหมด (${tickets.length} รายการ) เข้า Google Sheet เรียบร้อยแล้วครับ!`);
+      } else if (interaction.options.getSubcommand() === 'reset') {
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+        // 1. Clear DB
+        await LottoTicket.deleteMany({});
+        await LottoDraw.deleteMany({});
+
+        // 2. Reset User Stats
+        const { loadUsers, saveUsers } = require('../utils/economyUtils');
+        const users = loadUsers();
+        let count = 0;
+        for (const id in users) {
+          const u = users[id];
+          if (u) {
+            u.lottoSpent = 0;
+            u.lottoLimit = 10;
+            count++;
+          }
+        }
+        saveUsers(users);
+
+        const embed = new EmbedBuilder()
+          .setTitle('🧨 รีเซ็ตระบบหวยสำเร็จ')
+          .setDescription(`- ลบรายชื่อสลากและข้อมูลผลรางวัลทั้งหมด\n- คืนโควต้าและล้างยอดเสียให้ผู้ใช้ทั้งหมด **${count}** ราย`)
+          .setColor('DarkRed')
+          .setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
+
+        const { sendEconomyLog } = require('../utils/logger');
+        await sendEconomyLog(
+          interaction.client, 
+          '🧨 รีเซ็ตระบบหวย (Reset Lotto System)', 
+          `**แอดมินล้างกระดาน:** <@${interaction.user.id}>\nล้างข้อมูลสลากและรีเซ็ตทุกคนเป็น 10 ใบ เรียบร้อยแล้ว (${count} ยูสเซอร์)`, 
+          'DarkRed', 
+          false
+        );
       }
     } catch (error) {
       console.error('Lotto Admin Command Error:', error);
