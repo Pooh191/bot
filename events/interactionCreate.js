@@ -307,14 +307,14 @@ module.exports = {
         let ticketLabel = 'แอดมิน';
 
         if (interaction.customId === 'ticket_create_gov') {
-          targetRoleId = config.govRoleId;
-          targetCategoryId = config.govCategoryId;
+          targetRoleId = config.govRoleId || config.adminRoleId;
+          targetCategoryId = config.govCategoryId || config.adminCategoryId || config.categoryId;
           ticketPrefix = 'gov';
           ticketTitle = 'ติดต่อรัฐบาล (Government Contact)';
           ticketLabel = 'รัฐบาล';
         } else if (interaction.customId === 'ticket_create_parl') {
-          targetRoleId = config.parlRoleId;
-          targetCategoryId = config.parlCategoryId;
+          targetRoleId = config.parlRoleId || config.adminRoleId;
+          targetCategoryId = config.parlCategoryId || config.adminCategoryId || config.categoryId;
           ticketPrefix = 'parl';
           ticketTitle = 'ติดต่อรัฐสภา (Parliament Contact)';
           ticketLabel = 'รัฐสภา';
@@ -368,10 +368,14 @@ module.exports = {
             }).catch(() => null);
           }
 
+          let embedColor = '#e74c3c'; // Danger/Admin (Red)
+          if (ticketPrefix === 'gov') embedColor = '#3498db'; // Primary/Gov (Blue)
+          if (ticketPrefix === 'parl') embedColor = '#2ecc71'; // Success/Parl (Green)
+
           const embed = new EmbedBuilder()
             .setTitle(`🎫 ${ticketTitle}`)
             .setDescription(`สวัสดีครับ <@${interaction.user.id}>\n\nนี่คือห้องสำหรับ**ติดต่อ${ticketLabel}**\nโปรดพิมพ์รายละเอียดเรื่องที่ต้องการแจ้งไว้ที่นี่\nเจ้าหน้าที่ ( <@&${targetRoleId}> ) จะรีบมาตอบกลับครับ!\n\nเมื่อเสร็จสิ้นภารกิจแล้ว สามารถกดปุ่มด้านล่างเพื่อปิดทิคเก็ต`)
-            .setColor(ticketPrefix === 'gov' ? '#3498db' : '#e74c3c');
+            .setColor(embedColor);
 
           const closeBtn = new ButtonBuilder()
             .setCustomId('ticket_close_request')
