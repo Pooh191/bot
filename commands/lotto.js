@@ -40,7 +40,15 @@ module.exports = {
         saveUsers(users);
       }
 
-      const limit = user.lottoLimit || 10;
+      const limit = user.lottoLimit !== undefined ? user.lottoLimit : 10;
+
+      // Check if quota is already exhausted
+      if (limit <= 0) {
+        return interaction.reply({
+          content: `❌ คุณใช้โควต้าโฉนดสลากในงวดนี้ครบ **10 ใบ** เรียบร้อยแล้ว! กรุณารอเข้างวดใหม่เพื่อซื้ออีกครั้งครับ`,
+          flags: [MessageFlags.Ephemeral]
+        });
+      }
 
       if (amount > limit) {
         return interaction.reply({
