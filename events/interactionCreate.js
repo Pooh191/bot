@@ -291,13 +291,11 @@ module.exports = {
       if (interaction.isButton() && (interaction.customId === 'ticket_create' || interaction.customId === 'ticket_create_gov' || interaction.customId === 'ticket_create_admin' || interaction.customId === 'ticket_create_parl')) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
         
-        const TICKET_CONFIG_FILE = path.join(__dirname, '..', 'data', 'ticket_config.json');
+        const config = getCache('ticket_config');
         
-        if (!fs.existsSync(TICKET_CONFIG_FILE)) {
+        if (!config || Object.keys(config).length === 0) {
           return interaction.editReply({ content: '❌ แอดมินยังไม่ได้ตั้งค่าระบบ Ticket' });
         }
-        
-        const config = JSON.parse(fs.readFileSync(TICKET_CONFIG_FILE, 'utf8'));
         
         // กำหนดข้อมูลเริ่มต้น (เผื่อเป็นปุ่มเก่า ticket_create)
         let targetRoleId = config.adminRoleId;

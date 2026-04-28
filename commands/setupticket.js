@@ -7,10 +7,7 @@ const {
   ChannelType,
   PermissionFlagsBits
 } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const TICKET_CONFIG_FILE = path.join(__dirname, '..', 'data', 'ticket_config.json');
+const { setCacheAndSave } = require('../utils/mongoManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -72,7 +69,7 @@ module.exports = {
       parlCategoryId: parlCategory.id,
       parlRoleId: parlRole.id
     };
-    fs.writeFileSync(TICKET_CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+    setCacheAndSave('ticket_config', config);
 
     // สร้างกล่องข้อความที่มีปุ่มให้เลือกประเภททิคเก็ต
     const embed = new EmbedBuilder()

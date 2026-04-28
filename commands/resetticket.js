@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const TICKET_CONFIG_FILE = path.join(__dirname, '..', 'data', 'ticket_config.json');
+const { getCache, setCacheAndSave } = require('../utils/mongoManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,18 +23,20 @@ module.exports = {
     const deleteChannels = interaction.options.getBoolean('delete_channels');
     let deletedCount = 0;
 
+    const config = getCache('ticket_config');
+    const hasConfig = config && Object.keys(config).length > 0;
+
     // ถ้ากดเลือกลบช่องที่ค้างอยู่ด้วย
     if (deleteChannels) {
-        if (fs.existsSync(TICKET_CONFIG_FILE)) {
+        if (hasConfig) {
             try {
-                const config = JSON.parse(fs.readFileSync(TICKET_CONFIG_FILE, 'utf8'));
-                const categoryIds = [config.adminCategoryId, config.govCategoryId, config.categoryId].filter(id => id);
+                const categoryIds = [config.adminCategoryId, config.govCategoryId, config.parlCategoryId, config.categoryId].filter(id => id);
                 
                 if (categoryIds.length > 0) {
-                    // กวาดหาห้องที่มีชื่อขึ้นต้นว่า gov-, admin- หรือ ticket- และอยู่ใน category ที่ตั้งไว้
+                    // กวาดหาห้องที่มีชื่อขึ้นต้นว่า gov-, admin-, parl- หรือ ticket- และอยู่ใน category ที่ตั้งไว้
                     const categoryChannels = interaction.guild.channels.cache.filter(c => 
                         categoryIds.includes(c.parentId) && 
-                        (c.name.startsWith('gov-') || c.name.startsWith('admin-') || c.name.startsWith('ticket-'))
+                        (c.name.startsWith('gov-') || c.name.startsWith('admin-') || c.name.startsWith('parl-') || c.name.startsWith('ticket-'))
                     );
                     for (const [, channel] of categoryChannels) {
                         try {
@@ -58,12 +57,12 @@ module.exports = {
         }
     }
 
-    // ลบไฟล์ Config ทิ้ง
-    if (fs.existsSync(TICKET_CONFIG_FILE)) {
+    // ลบข้อมูล Config ทิ้ง
+    if (hasConfig) {
       try {
-        fs.unlinkSync(TICKET_CONFIG_FILE);
+        setCacheAndSave('ticket_config', {});
       } catch (e) {
-        console.error('Failed to delete ticket config file:', e);
+        console.error('Failed to clear ticket config:', e);
       }
     }
     
